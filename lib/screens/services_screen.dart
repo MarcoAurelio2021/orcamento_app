@@ -38,18 +38,20 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _createOrUpdateService(AppState appState) async {
+    final messenger = ScaffoldMessenger.of(context);
+
     final name = _nameController.text.trim();
     final value = double.tryParse(_valueController.text.replaceAll(',', '.'));
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Informe o tipo de serviço.')),
       );
       return;
     }
 
     if (value == null || value < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Informe um valor válido.')),
       );
       return;
@@ -69,9 +71,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
       await appState.updateService(service);
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Serviço já existia e foi atualizado.'),
         ),
@@ -85,9 +87,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
       await appState.addService(service);
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Serviço criado com sucesso.')),
       );
     }
@@ -96,6 +98,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _editService(AppState appState, ServiceType service) async {
+    final messenger = ScaffoldMessenger.of(context);
+
     final result = await showDialog<_EditServiceResult>(
       context: context,
       builder: (dialogContext) => EditServiceDialog(service: service),
@@ -112,14 +116,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
     await appState.updateService(updated);
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       const SnackBar(content: Text('Serviço atualizado com sucesso.')),
     );
   }
 
   Future<void> _deleteService(AppState appState, ServiceType service) async {
+    final messenger = ScaffoldMessenger.of(context);
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -141,9 +147,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
     if (confirm == true) {
       await appState.deleteService(service.id);
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('Serviço excluído.')),
       );
     }
