@@ -202,14 +202,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
               if (_selectedBudget == null)
                 const Text('Selecione um orçamento na lista para liberar as ações.')
               else ...[
-                Text(
-                  _selectedBudget!.number,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 6),
                 Text(_selectedBudget!.clientName),
                 const SizedBox(height: 6),
                 Text('Total: ${currency.format(_selectedBudget!.totalFinal)}'),
@@ -227,7 +219,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Prévia do PDF selecionado',
+                        'Prévia do relatório',
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 6),
@@ -243,7 +235,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => _openPdf(_selectedBudget!),
                   icon: const Icon(Icons.picture_as_pdf_outlined),
-                  label: const Text('Ver PDF'),
+                  label: const Text('Visualizar relatório'),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
@@ -267,9 +259,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 children: [
                   TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Pesquisar relatório por nome, número ou data',
-                      prefixIcon: Icon(Icons.search),
+                      hintText: 'Buscar orçamento...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {});
+                              },
+                            ),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -300,10 +302,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               : '${date.format(_period!.start)} - ${date.format(_period!.end)}',
                         ),
                       ),
-                      TextButton(
-                        onPressed: () => setState(() => _period = null),
-                        child: const Text('Limpar período'),
-                      ),
+                      if (_period != null)
+                        TextButton.icon(
+                          onPressed: () => setState(() => _period = null),
+                          icon: const Icon(Icons.close),
+                          label: const Text('Limpar período'),
+                        ),
                     ],
                   ),
                 ],

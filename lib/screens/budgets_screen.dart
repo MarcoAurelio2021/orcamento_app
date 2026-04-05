@@ -1087,32 +1087,43 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
               ),
               if (_type == ItemValueType.fixed) ...[
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                    label: Text(
-                      _hasWirePass ? 'Com passar fio' : 'Sem passar fio',
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(
+                      value: false,
+                      label: Text('Sem passar fio'),
                     ),
-                    selected: true,
-                    showCheckmark: true,
-                    onSelected: (_) {},
-                  ),
+                    ButtonSegment(
+                      value: true,
+                      label: Text('Com passar fio'),
+                    ),
+                  ],
+                  selected: {_hasWirePass},
+                  onSelectionChanged: (value) => setState(() {
+                    _hasWirePass = value.first;
+                    if (!_hasWirePass) {
+                      _wireChargeType = WireChargeType.fixed;
+                      _wireChargeController.text = '0';
+                    }
+                  }),
                 ),
               ],
               if (_type == ItemValueType.fixed && _hasWirePass) ...[
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                    label: Text(
-                      _wireChargeType == WireChargeType.fixed
-                          ? 'Preço fixo'
-                          : 'Percentual',
+                SegmentedButton<WireChargeType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: WireChargeType.fixed,
+                      label: Text('Preço fixo'),
                     ),
-                    selected: true,
-                    showCheckmark: true,
-                    onSelected: (_) {},
-                  ),
+                    ButtonSegment(
+                      value: WireChargeType.percentage,
+                      label: Text('Percentual'),
+                    ),
+                  ],
+                  selected: {_wireChargeType},
+                  onSelectionChanged: (value) =>
+                      setState(() => _wireChargeType = value.first),
                 ),
                 const SizedBox(height: 12),
                 TextField(

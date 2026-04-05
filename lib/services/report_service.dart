@@ -117,7 +117,6 @@ class ReportService {
       buffer.writeln('');
     }
 
-    buffer.writeln('ORÇAMENTO ${budget.number}');
     buffer.writeln('Cliente: ${budget.clientName}');
     if (budget.technician.isNotEmpty) {
       buffer.writeln('Técnico: ${budget.technician}');
@@ -149,7 +148,7 @@ class ReportService {
       buffer.writeln('Total final: ${_currency.format(budget.totalFinal)}');
     }
 
-    if (options.showNotes && budget.notes.isNotEmpty) {
+    if (options.showNotes && budget.notes.trim().isNotEmpty) {
       buffer.writeln('');
       buffer.writeln('Observações: ${budget.notes}');
     }
@@ -193,20 +192,49 @@ class ReportService {
               ],
             ),
           pw.Text(
-            'Orçamento ${budget.number}',
+            'ORÇAMENTO',
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18),
           ),
-          pw.SizedBox(height: 8),
-          pw.Text('Cliente: ${budget.clientName}'),
-          if (budget.technician.isNotEmpty) pw.Text('Técnico: ${budget.technician}'),
-          if (budget.address.isNotEmpty) pw.Text('Endereço: ${budget.address}'),
-          if (budget.paymentMethod.isNotEmpty) pw.Text('Pagamento: ${budget.paymentMethod}'),
-          pw.Text('Data: ${_date.format(budget.createdAt)}'),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            width: double.infinity,
+            padding: pw.EdgeInsets.all(10),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.grey300),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Dados do cliente',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Text('Cliente: ${budget.clientName}'),
+                if (budget.technician.isNotEmpty)
+                  pw.Text('Técnico: ${budget.technician}'),
+                if (budget.address.isNotEmpty)
+                  pw.Text('Endereço: ${budget.address}'),
+                if (budget.paymentMethod.isNotEmpty)
+                  pw.Text('Pagamento: ${budget.paymentMethod}'),
+                pw.Text('Data: ${_date.format(budget.createdAt)}'),
+              ],
+            ),
+          ),
           if (itemHeaders.isNotEmpty && itemRows.isNotEmpty) ...[
             pw.SizedBox(height: 16),
             pw.TableHelper.fromTextArray(
               headers: itemHeaders,
               data: itemRows,
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+              cellPadding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.6),
             ),
           ],
           if (options.showSubtotal || options.showDiscount || options.showTotalFinal) ...[
@@ -221,18 +249,26 @@ class ReportService {
                   if (options.showDiscount)
                     pw.Text('Desconto: ${_currency.format(budget.discountApplied)}'),
                   if (options.showTotalFinal)
-                    pw.Text(
-                      'Total final: ${_currency.format(budget.totalFinal)}',
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 14,
+                    pw.Container(
+                      margin: pw.EdgeInsets.only(top: 6),
+                      padding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey300,
+                        borderRadius: pw.BorderRadius.circular(6),
+                      ),
+                      child: pw.Text(
+                        'Total final: ${_currency.format(budget.totalFinal)}',
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                 ],
               ),
             ),
           ],
-          if (options.showNotes && budget.notes.isNotEmpty) ...[
+          if (options.showNotes && budget.notes.trim().isNotEmpty) ...[
             pw.SizedBox(height: 16),
             pw.Text(
               'Observações',
