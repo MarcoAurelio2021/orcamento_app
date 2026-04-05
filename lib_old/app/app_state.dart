@@ -257,9 +257,6 @@ class AppState extends ChangeNotifier {
     required double unitValue,
     required int quantity,
     String? id,
-    bool hasWirePass = false,
-    WireChargeType wireChargeType = WireChargeType.fixed,
-    double wireChargeValue = 0,
   }) {
     return BudgetItem(
       id: id ?? _uuid.v4(),
@@ -268,9 +265,6 @@ class AppState extends ChangeNotifier {
       unitValue: unitValue,
       quantity: quantity,
       createdAt: DateTime.now(),
-      hasWirePass: hasWirePass,
-      wireChargeType: wireChargeType,
-      wireChargeValue: wireChargeValue,
     );
   }
 

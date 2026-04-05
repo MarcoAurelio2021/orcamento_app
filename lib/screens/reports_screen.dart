@@ -20,11 +20,10 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   final _searchController = TextEditingController();
-
   DateTimeRange? _period;
   Budget? _selectedBudget;
   bool _includeCompany = true;
-  bool _showUnitValues = true;
+  ReportPdfOptions _reportOptions = const ReportPdfOptions();
 
   @override
   void dispose() {
@@ -40,7 +39,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final budgets = appState.budgets.where((budget) {
       final query = _searchController.text.trim().toLowerCase();
-
       final matchesText = query.isEmpty ||
           budget.clientName.toLowerCase().contains(query) ||
           budget.number.toLowerCase().contains(query) ||
@@ -57,223 +55,323 @@ class _ReportsScreenState extends State<ReportsScreen> {
       return matchesText && matchesPeriod;
     }).toList();
 
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Column(
-        children: [
-          AppSectionCard(
-            title: 'Gerar relatório',
-            subtitle:
-                'Pesquise apenas orçamentos já criados e escolha como visualizar ou compartilhar.',
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    labelText: 'Pesquisar relatório por nome, número ou data',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final now = DateTime.now();
-                        final picked = await showDateRangePicker(
-                          context: context,
-                          firstDate: DateTime(now.year - 3),
-                          lastDate: DateTime(now.year + 1),
-                          initialDateRange: _period,
-                        );
+    if (_selectedBudget != null &&
+        !budgets.any((budget) => budget.id == _selectedBudget!.id)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _selectedBudget = null);
+        }
+      });
+    }
 
-                        if (picked != null) {
-                          setState(() => _period = picked);
-                        }
-                      },
-                      icon: const Icon(Icons.calendar_month_outlined),
-                      label: Text(
-                        _period == null
-                            ? 'Escolher período'
-                            : '${date.format(_period!.start)} - ${date.format(_period!.end)}',
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
+
+        final reportsListCard = AppSectionCard(
+          title: 'Escolher relatório',
+          subtitle:
+              'Selecione um orçamento da lista para visualizar ou compartilhar.',
+          child: SizedBox(
+            width: double.infinity,
+            child: budgets.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(
+                      child: Text('Nenhum orçamento encontrado para relatório.'),
                     ),
-                    TextButton(
-                      onPressed: () => setState(() => _period = null),
-                      child: const Text('Limpar período'),
+                  )
+                : ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: 180,
+                      maxHeight: isWide ? 520 : 320,
                     ),
-                    FilterChip(
-                      label: const Text('Com dados da empresa'),
-                      selected: _includeCompany,
-                      onSelected: (value) =>
-                          setState(() => _includeCompany = value),
-                    ),
-                    FilterChip(
-                      label: const Text('Mostrar valor unitário'),
-                      selected: _showUnitValues,
-                      onSelected: (value) =>
-                          setState(() => _showUnitValues = value),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Card(
-              child: budgets.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child:
-                            Text('Nenhum orçamento encontrado para relatório.'),
-                      ),
-                    )
-                  : Scrollbar(
+                    child: Scrollbar(
                       thumbVisibility: true,
                       child: ListView.separated(
                         padding: const EdgeInsets.all(12),
                         itemCount: budgets.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final budget = budgets[index];
                           final selected = _selectedBudget?.id == budget.id;
 
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .secondary
-                                      .withValues(alpha: 0.08)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: selected
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : Colors.grey.shade300,
-                                width: selected ? 1.4 : 1.0,
+                          return Material(
+                            color: selected
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .secondary
+                                    .withValues(alpha: 0.08)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            child: ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                            ),
-                            child: Column(
-                              children: [
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(18),
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedBudget =
-                                          selected ? null : budget;
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                budget.number,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                '${budget.clientName} • ${date.format(budget.createdAt)}',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          currency.format(budget.totalFinal),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                if (selected)
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      0,
-                                      16,
-                                      16,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        const Divider(height: 20),
-                                        const Text(
-                                          'Ações do orçamento',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(budget.clientName),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Total: ${currency.format(budget.totalFinal)}',
-                                        ),
-                                        const SizedBox(height: 16),
-                                        ElevatedButton.icon(
-                                          onPressed: () => _openPdf(budget),
-                                          icon: const Icon(
-                                            Icons.picture_as_pdf_outlined,
-                                          ),
-                                          label: Text(
-                                            'Ver PDF - ${_includeCompany ? 'Com' : 'Sem'} dados da empresa',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        OutlinedButton.icon(
-                                          onPressed: () => _sharePdf(budget),
-                                          icon:
-                                              const Icon(Icons.share_outlined),
-                                          label: Text(
-                                            'Compartilhar PDF - ${_includeCompany ? 'Com' : 'Sem'} dados',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        OutlinedButton.icon(
-                                          onPressed: () => _shareText(budget),
-                                          icon: const Icon(
-                                            Icons.text_snippet_outlined,
-                                          ),
-                                          label: Text(
-                                            'Compartilhar texto - ${_includeCompany ? 'Com' : 'Sem'} dados',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
+                              title: Text(budget.number),
+                              subtitle: Text(
+                                '${budget.clientName} • ${date.format(budget.createdAt)}',
+                              ),
+                              trailing: Text(currency.format(budget.totalFinal)),
+                              onTap: () =>
+                                  setState(() => _selectedBudget = budget),
                             ),
                           );
                         },
                       ),
                     ),
-            ),
+                  ),
           ),
-        ],
-      ),
+        );
+
+        final detailsCard = AppSectionCard(
+          title: 'Filtros do PDF',
+          subtitle:
+              'Marque exatamente o que deve aparecer no PDF antes de visualizar ou compartilhar.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Dados da empresa',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChip(
+                    label: const Text('Com dados da empresa'),
+                    selected: _includeCompany,
+                    showCheckmark: true,
+                    onSelected: (_) => setState(() => _includeCompany = true),
+                  ),
+                  FilterChip(
+                    label: const Text('Sem dados da empresa'),
+                    selected: !_includeCompany,
+                    showCheckmark: true,
+                    onSelected: (_) => setState(() => _includeCompany = false),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Campos dos itens',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildItemChip('Serviço', _reportOptions.showService,
+                      (v) => _updateOptions(showService: v)),
+                  _buildItemChip('Tipo', _reportOptions.showType,
+                      (v) => _updateOptions(showType: v)),
+                  _buildItemChip('Valor do item', _reportOptions.showItemValue,
+                      (v) => _updateOptions(showItemValue: v)),
+                  _buildItemChip('Passar fio', _reportOptions.showWirePass,
+                      (v) => _updateOptions(showWirePass: v)),
+                  _buildItemChip('Qtd', _reportOptions.showQuantity,
+                      (v) => _updateOptions(showQuantity: v)),
+                  _buildItemChip('Total dos itens', _reportOptions.showItemsTotal,
+                      (v) => _updateOptions(showItemsTotal: v)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Totais do orçamento',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildItemChip('Subtotal', _reportOptions.showSubtotal,
+                      (v) => _updateOptions(showSubtotal: v)),
+                  _buildItemChip('Desconto', _reportOptions.showDiscount,
+                      (v) => _updateOptions(showDiscount: v)),
+                  _buildItemChip('Total final', _reportOptions.showTotalFinal,
+                      (v) => _updateOptions(showTotalFinal: v)),
+                  _buildItemChip('Observações', _reportOptions.showNotes,
+                      (v) => _updateOptions(showNotes: v)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (_selectedBudget == null)
+                const Text('Selecione um orçamento na lista para liberar as ações.')
+              else ...[
+                Text(
+                  _selectedBudget!.number,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(_selectedBudget!.clientName),
+                const SizedBox(height: 6),
+                Text('Total: ${currency.format(_selectedBudget!.totalFinal)}'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Prévia do PDF selecionado',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${_includeCompany ? 'Com dados da empresa' : 'Sem dados da empresa'}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(ReportService.filtersLabel(_reportOptions)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => _openPdf(_selectedBudget!),
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  label: const Text('Ver PDF'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _sharePdf(_selectedBudget!),
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('Compartilhar PDF'),
+                ),
+              ],
+            ],
+          ),
+        );
+
+        return ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            AppSectionCard(
+              title: 'Gerar relatório',
+              subtitle:
+                  'Pesquise apenas orçamentos já criados e escolha como visualizar ou compartilhar.',
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      labelText: 'Pesquisar relatório por nome, número ou data',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final now = DateTime.now();
+                          final picked = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(now.year - 3),
+                            lastDate: DateTime(now.year + 1),
+                            initialDateRange: _period,
+                          );
+
+                          if (picked != null) {
+                            setState(() => _period = picked);
+                          }
+                        },
+                        icon: const Icon(Icons.calendar_month_outlined),
+                        label: Text(
+                          _period == null
+                              ? 'Escolher período'
+                              : '${date.format(_period!.start)} - ${date.format(_period!.end)}',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => _period = null),
+                        child: const Text('Limpar período'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (isWide)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 5, child: reportsListCard),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 4, child: detailsCard),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  reportsListCard,
+                  const SizedBox(height: 16),
+                  detailsCard,
+                ],
+              ),
+          ],
+        );
+      },
     );
+  }
+
+  Widget _buildItemChip(
+    String label,
+    bool selected,
+    ValueChanged<bool> onSelected,
+  ) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: true,
+      onSelected: onSelected,
+    );
+  }
+
+  void _updateOptions({
+    bool? showService,
+    bool? showType,
+    bool? showItemValue,
+    bool? showWirePass,
+    bool? showQuantity,
+    bool? showItemsTotal,
+    bool? showSubtotal,
+    bool? showDiscount,
+    bool? showTotalFinal,
+    bool? showNotes,
+  }) {
+    setState(() {
+      _reportOptions = _reportOptions.copyWith(
+        showService: showService,
+        showType: showType,
+        showItemValue: showItemValue,
+        showWirePass: showWirePass,
+        showQuantity: showQuantity,
+        showItemsTotal: showItemsTotal,
+        showSubtotal: showSubtotal,
+        showDiscount: showDiscount,
+        showTotalFinal: showTotalFinal,
+        showNotes: showNotes,
+      );
+    });
   }
 
   Future<void> _openPdf(Budget budget) async {
@@ -287,7 +385,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               budget,
               company: appState.company,
               includeCompany: _includeCompany,
-              showUnitValues: _showUnitValues,
+              options: _reportOptions,
             ),
           ),
         ),
@@ -302,10 +400,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
       budget,
       company: appState.company,
       includeCompany: _includeCompany,
-      showUnitValues: _showUnitValues,
+      options: _reportOptions,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     final file = XFile.fromData(
       Uint8List.fromList(bytes),
@@ -317,20 +415,5 @@ class _ReportsScreenState extends State<ReportsScreen> {
       [file],
       text: 'Segue o orçamento ${budget.number}.',
     );
-  }
-
-  Future<void> _shareText(Budget budget) async {
-    final appState = context.read<AppState>();
-
-    final text = ReportService.budgetAsText(
-      budget,
-      company: appState.company,
-      includeCompany: _includeCompany,
-      showUnitValues: _showUnitValues,
-    );
-
-    if (!mounted) return;
-
-    await Share.share(text);
   }
 }

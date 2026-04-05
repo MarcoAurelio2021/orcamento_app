@@ -26,7 +26,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
   final _valueController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
   final _discountController = TextEditingController(text: '0');
-  final _wireChargeController = TextEditingController(text: '0');
 
   final _clientFormKey = GlobalKey<FormState>();
   final _itemFormKey = GlobalKey<FormState>();
@@ -35,8 +34,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
   bool _started = false;
   DiscountType _discountType = DiscountType.fixed;
   ItemValueType _itemValueType = ItemValueType.fixed;
-  bool _hasWirePass = false;
-  WireChargeType _wireChargeType = WireChargeType.fixed;
   List<BudgetItem> _items = [];
 
   @override
@@ -50,15 +47,11 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
     _valueController.dispose();
     _quantityController.dispose();
     _discountController.dispose();
-    _wireChargeController.dispose();
     super.dispose();
   }
 
   double get _discountValue =>
       double.tryParse(_discountController.text.replaceAll(',', '.')) ?? 0;
-
-  double get _wireChargeValue =>
-      double.tryParse(_wireChargeController.text.replaceAll(',', '.')) ?? 0;
 
   double get _fixedSubtotal => _items
       .where((item) => item.valueType == ItemValueType.fixed)
@@ -156,16 +149,10 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
     required String name,
     required ItemValueType valueType,
     required double unitValue,
-    required bool hasWirePass,
-    required WireChargeType wireChargeType,
-    required double wireChargeValue,
   }) {
     return existing.name.trim().toLowerCase() == name.trim().toLowerCase() &&
         existing.valueType == valueType &&
-        existing.unitValue == unitValue &&
-        existing.hasWirePass == hasWirePass &&
-        existing.wireChargeType == wireChargeType &&
-        existing.wireChargeValue == wireChargeValue;
+        existing.unitValue == unitValue;
   }
 
   void _addItem(AppState appState) {
@@ -191,9 +178,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
         name: name,
         valueType: _itemValueType,
         unitValue: value,
-        hasWirePass: _hasWirePass,
-        wireChargeType: _wireChargeType,
-        wireChargeValue: _wireChargeValue,
       ),
     );
 
@@ -209,11 +193,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
           valueType: _itemValueType,
           unitValue: value,
           quantity: quantity,
-          hasWirePass: _itemValueType == ItemValueType.fixed && _hasWirePass,
-          wireChargeType: _wireChargeType,
-          wireChargeValue: _itemValueType == ItemValueType.fixed && _hasWirePass
-              ? _wireChargeValue
-              : 0,
         );
         _items = [..._items, item];
       }
@@ -221,10 +200,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
       _serviceController.clear();
       _valueController.clear();
       _quantityController.text = '1';
-      _wireChargeController.text = '0';
       _itemValueType = ItemValueType.fixed;
-      _hasWirePass = false;
-      _wireChargeType = WireChargeType.fixed;
     });
 
     final message = existingIndex >= 0
@@ -237,10 +213,105 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
   }
 
   Future<void> _editItem(BudgetItem item) async {
+    final serviceController = TextEditingController(text: item.name);
+    final valueController = TextEditingController(
+      text: item.unitValue.toStringAsFixed(2),
+    );
+    final quantityController = TextEditingController(
+      text: item.quantity.toString(),
+    );
+    var type = item.valueType;
+
     final updated = await showDialog<BudgetItem>(
       context: context,
-      builder: (dialogContext) => _EditBudgetItemDialog(item: item),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Editar item'),
+        content: StatefulBuilder(
+          builder: (context, setLocalState) => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: serviceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de serviço',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<ItemValueType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ItemValueType.fixed,
+                      label: Text('Valor fixo'),
+                    ),
+                    ButtonSegment(
+                      value: ItemValueType.percentage,
+                      label: Text('Percentual'),
+                    ),
+                  ],
+                  selected: {type},
+                  onSelectionChanged: (value) =>
+                      setLocalState(() => type = value.first),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: valueController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: type == ItemValueType.fixed
+                        ? 'Valor unitário'
+                        : 'Percentual (%)',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Quantidade'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value =
+                  double.tryParse(valueController.text.replaceAll(',', '.'));
+              final quantity = int.tryParse(quantityController.text);
+
+              if (serviceController.text.trim().isEmpty ||
+                  value == null ||
+                  quantity == null ||
+                  quantity <= 0) {
+                return;
+              }
+
+              Navigator.pop(
+                dialogContext,
+                item.copyWith(
+                  name: serviceController.text.trim(),
+                  valueType: type,
+                  unitValue: value,
+                  quantity: quantity,
+                ),
+              );
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
     );
+
+    serviceController.dispose();
+    valueController.dispose();
+    quantityController.dispose();
 
     if (updated != null) {
       setState(() {
@@ -272,9 +343,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
       _valueController.clear();
       _quantityController.text = '1';
       _discountController.text = '0';
-      _wireChargeController.text = '0';
-      _hasWirePass = false;
-      _wireChargeType = WireChargeType.fixed;
     });
   }
 
@@ -466,6 +534,11 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                             );
                           }
 
+                          textEditingController.addListener(() {
+                            _serviceController.value =
+                                textEditingController.value;
+                          });
+
                           return TextFormField(
                             key: _serviceFieldKey,
                             controller: textEditingController,
@@ -473,9 +546,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                             decoration: const InputDecoration(
                               labelText: 'Tipo de serviço',
                             ),
-                            onChanged: (value) {
-                              _serviceController.text = value;
-                            },
                             validator: (value) =>
                                 (value == null || value.trim().isEmpty)
                                     ? 'Informe o serviço'
@@ -544,14 +614,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                                 ),
                               ],
                               selected: {_itemValueType},
-                              onSelectionChanged: (value) => setState(() {
-                                _itemValueType = value.first;
-                                if (_itemValueType != ItemValueType.fixed) {
-                                  _hasWirePass = false;
-                                  _wireChargeType = WireChargeType.fixed;
-                                  _wireChargeController.text = '0';
-                                }
-                              }),
+                              onSelectionChanged: (value) => setState(
+                                () => _itemValueType = value.first,
+                              ),
                             ),
                           ),
                           SizedBox(
@@ -597,87 +662,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                           ),
                         ],
                       ),
-                      if (_itemValueType == ItemValueType.fixed) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: 420,
-                          child: SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(
-                                value: false,
-                                label: Text('Sem passar fio'),
-                              ),
-                              ButtonSegment(
-                                value: true,
-                                label: Text('Com passar fio'),
-                              ),
-                            ],
-                            selected: {_hasWirePass},
-                            onSelectionChanged: (value) => setState(
-                              () => _hasWirePass = value.first,
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (_itemValueType == ItemValueType.fixed &&
-                          _hasWirePass) ...[
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            SizedBox(
-                              width: 320,
-                              child: SegmentedButton<WireChargeType>(
-                                segments: const [
-                                  ButtonSegment(
-                                    value: WireChargeType.fixed,
-                                    label: Text('Preço fixo'),
-                                  ),
-                                  ButtonSegment(
-                                    value: WireChargeType.percentage,
-                                    label: Text('Percentual'),
-                                  ),
-                                ],
-                                selected: {_wireChargeType},
-                                onSelectionChanged: (value) => setState(
-                                  () => _wireChargeType = value.first,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 220,
-                              child: TextFormField(
-                                controller: _wireChargeController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                decoration: InputDecoration(
-                                  labelText: _wireChargeType ==
-                                          WireChargeType.fixed
-                                      ? 'Valor fixo para passar fio'
-                                      : 'Percentual para passar fio (%)',
-                                ),
-                                validator: (value) {
-                                  if (!_hasWirePass ||
-                                      _itemValueType != ItemValueType.fixed) {
-                                    return null;
-                                  }
-
-                                  final parsed = double.tryParse(
-                                    (value ?? '').replaceAll(',', '.'),
-                                  );
-                                  if (parsed == null || parsed < 0) {
-                                    return 'Valor inválido';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: _started ? () => _addItem(appState) : null,
@@ -780,35 +764,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                                         color: Colors.black87,
                                       ),
                                     ),
-                                    if (item.valueType == ItemValueType.fixed) ...[
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        item.hasWirePass
-                                            ? 'Com passar fio'
-                                            : 'Sem passar fio',
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      if (item.hasWirePass) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item.wireChargeType == WireChargeType.fixed
-                                              ? 'Passar fio valor fixo: ${currency.format(item.wireChargeValue)}'
-                                              : 'Passar fio percentual: ${item.wireChargeValue.toStringAsFixed(2)}%',
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Valor unitário final: ${currency.format(item.adjustedUnitValue)}',
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
                                     const SizedBox(height: 4),
                                     Text(
                                       'Quantidade: ${item.quantity}',
@@ -918,189 +873,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-class _EditBudgetItemDialog extends StatefulWidget {
-  const _EditBudgetItemDialog({required this.item});
-
-  final BudgetItem item;
-
-  @override
-  State<_EditBudgetItemDialog> createState() => _EditBudgetItemDialogState();
-}
-
-class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
-  late final TextEditingController _serviceController;
-  late final TextEditingController _valueController;
-  late final TextEditingController _quantityController;
-  late final TextEditingController _wireChargeController;
-  late ItemValueType _type;
-  late bool _hasWirePass;
-  late WireChargeType _wireChargeType;
-
-  @override
-  void initState() {
-    super.initState();
-    _serviceController = TextEditingController(text: widget.item.name);
-    _valueController = TextEditingController(
-      text: widget.item.unitValue.toStringAsFixed(2),
-    );
-    _quantityController = TextEditingController(
-      text: widget.item.quantity.toString(),
-    );
-    _wireChargeController = TextEditingController(
-      text: widget.item.wireChargeValue.toStringAsFixed(2),
-    );
-    _type = widget.item.valueType;
-    _hasWirePass = widget.item.hasWirePass;
-    _wireChargeType = widget.item.wireChargeType;
-  }
-
-  @override
-  void dispose() {
-    _serviceController.dispose();
-    _valueController.dispose();
-    _quantityController.dispose();
-    _wireChargeController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final value = double.tryParse(_valueController.text.replaceAll(',', '.'));
-    final quantity = int.tryParse(_quantityController.text);
-
-    if (_serviceController.text.trim().isEmpty ||
-        value == null ||
-        quantity == null ||
-        quantity <= 0) {
-      return;
-    }
-
-    Navigator.of(context).pop(
-      widget.item.copyWith(
-        name: _serviceController.text.trim(),
-        valueType: _type,
-        unitValue: value,
-        quantity: quantity,
-        hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
-        wireChargeType: _wireChargeType,
-        wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
-            ? (double.tryParse(_wireChargeController.text.replaceAll(',', '.')) ?? 0)
-            : 0,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: AlertDialog(
-        title: const Text('Editar item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _serviceController,
-                decoration: const InputDecoration(labelText: 'Tipo de serviço'),
-              ),
-              const SizedBox(height: 12),
-              SegmentedButton<ItemValueType>(
-                segments: const [
-                  ButtonSegment(
-                    value: ItemValueType.fixed,
-                    label: Text('Valor fixo'),
-                  ),
-                  ButtonSegment(
-                    value: ItemValueType.percentage,
-                    label: Text('Percentual'),
-                  ),
-                ],
-                selected: {_type},
-                onSelectionChanged: (value) => setState(() {
-                  _type = value.first;
-                  if (_type != ItemValueType.fixed) {
-                    _hasWirePass = false;
-                    _wireChargeType = WireChargeType.fixed;
-                    _wireChargeController.text = '0';
-                  }
-                }),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _valueController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: _type == ItemValueType.fixed
-                      ? 'Valor unitário'
-                      : 'Percentual (%)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _quantityController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Quantidade'),
-              ),
-              if (_type == ItemValueType.fixed) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                    label: Text(
-                      _hasWirePass ? 'Com passar fio' : 'Sem passar fio',
-                    ),
-                    selected: true,
-                    showCheckmark: true,
-                    onSelected: (_) {},
-                  ),
-                ),
-              ],
-              if (_type == ItemValueType.fixed && _hasWirePass) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                    label: Text(
-                      _wireChargeType == WireChargeType.fixed
-                          ? 'Preço fixo'
-                          : 'Percentual',
-                    ),
-                    selected: true,
-                    showCheckmark: true,
-                    onSelected: (_) {},
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _wireChargeController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: _wireChargeType == WireChargeType.fixed
-                        ? 'Valor fixo para passar fio'
-                        : 'Percentual para passar fio (%)',
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: _submit,
-            child: const Text('Salvar'),
           ),
         ],
       ),

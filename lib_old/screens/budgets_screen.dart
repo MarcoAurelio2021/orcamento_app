@@ -281,16 +281,10 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     required String name,
     required ItemValueType valueType,
     required double unitValue,
-    required bool hasWirePass,
-    required WireChargeType wireChargeType,
-    required double wireChargeValue,
   }) {
     return existing.name.trim().toLowerCase() == name.trim().toLowerCase() &&
         existing.valueType == valueType &&
-        existing.unitValue == unitValue &&
-        existing.hasWirePass == hasWirePass &&
-        existing.wireChargeType == wireChargeType &&
-        existing.wireChargeValue == wireChargeValue;
+        existing.unitValue == unitValue;
   }
 
   Future<void> _editItem(BudgetItem item) async {
@@ -310,9 +304,6 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
           valueType: result.valueType,
           unitValue: result.unitValue,
           quantity: result.quantity,
-          hasWirePass: result.hasWirePass,
-          wireChargeType: result.wireChargeType,
-          wireChargeValue: result.wireChargeValue,
         );
       }).toList();
     });
@@ -337,9 +328,6 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
           name: result.name,
           valueType: result.valueType,
           unitValue: result.unitValue,
-          hasWirePass: result.hasWirePass,
-          wireChargeType: result.wireChargeType,
-          wireChargeValue: result.wireChargeValue,
         ),
       );
 
@@ -356,9 +344,6 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
             valueType: result.valueType,
             unitValue: result.unitValue,
             quantity: result.quantity,
-            hasWirePass: result.hasWirePass,
-            wireChargeType: result.wireChargeType,
-            wireChargeValue: result.wireChargeValue,
           ),
         ];
       }
@@ -681,12 +666,8 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _quantityController =
       TextEditingController(text: '1');
-  final TextEditingController _wireChargeController =
-      TextEditingController(text: '0');
 
   ItemValueType _type = ItemValueType.fixed;
-  bool _hasWirePass = false;
-  WireChargeType _wireChargeType = WireChargeType.fixed;
 
   List<ServiceType> _filteredServices(String query) {
     final normalized = query.trim().toLowerCase();
@@ -724,11 +705,6 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
         valueType: _type,
         unitValue: value,
         quantity: quantity,
-        hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
-        wireChargeType: _wireChargeType,
-        wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
-            ? (double.tryParse(_wireChargeController.text.replaceAll(',', '.')) ?? 0)
-            : 0,
       ),
     );
   }
@@ -738,7 +714,6 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
     _serviceController.dispose();
     _valueController.dispose();
     _quantityController.dispose();
-    _wireChargeController.dispose();
     super.dispose();
   }
 
@@ -789,15 +764,16 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
                         );
                       }
 
+                      textEditingController.addListener(() {
+                        _serviceController.value = textEditingController.value;
+                      });
+
                       return TextField(
                         controller: textEditingController,
                         focusNode: focusNode,
                         decoration: const InputDecoration(
                           labelText: 'Serviço',
                         ),
-                        onChanged: (value) {
-                          _serviceController.text = value;
-                        },
                       );
                     },
                     optionsViewBuilder: (context, onSelected, options) {
@@ -854,14 +830,8 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
                       ),
                     ],
                     selected: {_type},
-                    onSelectionChanged: (value) => setState(() {
-                      _type = value.first;
-                      if (_type != ItemValueType.fixed) {
-                        _hasWirePass = false;
-                        _wireChargeType = WireChargeType.fixed;
-                        _wireChargeController.text = '0';
-                      }
-                    }),
+                    onSelectionChanged: (value) =>
+                        setState(() => _type = value.first),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -880,58 +850,6 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Quantidade'),
                   ),
-                  if (_type == ItemValueType.fixed) ...[
-                    const SizedBox(height: 12),
-                    SegmentedButton<bool>(
-                      segments: const [
-                        ButtonSegment(
-                          value: false,
-                          label: Text('Sem passar fio'),
-                        ),
-                        ButtonSegment(
-                          value: true,
-                          label: Text('Com passar fio'),
-                        ),
-                      ],
-                      selected: {_hasWirePass},
-                      onSelectionChanged: (value) => setState(() {
-                        _hasWirePass = value.first;
-                        if (!_hasWirePass) {
-                          _wireChargeType = WireChargeType.fixed;
-                          _wireChargeController.text = '0';
-                        }
-                      }),
-                    ),
-                  ],
-                  if (_type == ItemValueType.fixed && _hasWirePass) ...[
-                    const SizedBox(height: 12),
-                    SegmentedButton<WireChargeType>(
-                      segments: const [
-                        ButtonSegment(
-                          value: WireChargeType.fixed,
-                          label: Text('Preço fixo'),
-                        ),
-                        ButtonSegment(
-                          value: WireChargeType.percentage,
-                          label: Text('Percentual'),
-                        ),
-                      ],
-                      selected: {_wireChargeType},
-                      onSelectionChanged: (value) =>
-                          setState(() => _wireChargeType = value.first),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _wireChargeController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: _wireChargeType == WireChargeType.fixed
-                            ? 'Valor fixo para passar fio'
-                            : 'Percentual para passar fio (%)',
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -973,10 +891,7 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _valueController;
   late final TextEditingController _quantityController;
-  late final TextEditingController _wireChargeController;
   late ItemValueType _type;
-  late bool _hasWirePass;
-  late WireChargeType _wireChargeType;
 
   @override
   void initState() {
@@ -988,12 +903,7 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
     _quantityController = TextEditingController(
       text: widget.item.quantity.toString(),
     );
-    _wireChargeController = TextEditingController(
-      text: widget.item.wireChargeValue.toStringAsFixed(2),
-    );
     _type = widget.item.valueType;
-    _hasWirePass = widget.item.hasWirePass;
-    _wireChargeType = widget.item.wireChargeType;
   }
 
   @override
@@ -1001,7 +911,6 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
     _nameController.dispose();
     _valueController.dispose();
     _quantityController.dispose();
-    _wireChargeController.dispose();
     super.dispose();
   }
 
@@ -1020,11 +929,6 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
         valueType: _type,
         unitValue: value,
         quantity: quantity,
-        hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
-        wireChargeType: _wireChargeType,
-        wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
-            ? (double.tryParse(_wireChargeController.text.replaceAll(',', '.')) ?? 0)
-            : 0,
       ),
     );
   }
@@ -1059,14 +963,8 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
                   ),
                 ],
                 selected: {_type},
-                onSelectionChanged: (value) => setState(() {
-                  _type = value.first;
-                  if (_type != ItemValueType.fixed) {
-                    _hasWirePass = false;
-                    _wireChargeType = WireChargeType.fixed;
-                    _wireChargeController.text = '0';
-                  }
-                }),
+                onSelectionChanged: (value) =>
+                    setState(() => _type = value.first),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -1085,47 +983,6 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Quantidade'),
               ),
-              if (_type == ItemValueType.fixed) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                    label: Text(
-                      _hasWirePass ? 'Com passar fio' : 'Sem passar fio',
-                    ),
-                    selected: true,
-                    showCheckmark: true,
-                    onSelected: (_) {},
-                  ),
-                ),
-              ],
-              if (_type == ItemValueType.fixed && _hasWirePass) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                    label: Text(
-                      _wireChargeType == WireChargeType.fixed
-                          ? 'Preço fixo'
-                          : 'Percentual',
-                    ),
-                    selected: true,
-                    showCheckmark: true,
-                    onSelected: (_) {},
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _wireChargeController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: _wireChargeType == WireChargeType.fixed
-                        ? 'Valor fixo para passar fio'
-                        : 'Percentual para passar fio (%)',
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -1150,18 +1007,12 @@ class _AddBudgetItemResult {
     required this.valueType,
     required this.unitValue,
     required this.quantity,
-    required this.hasWirePass,
-    required this.wireChargeType,
-    required this.wireChargeValue,
   });
 
   final String name;
   final ItemValueType valueType;
   final double unitValue;
   final int quantity;
-  final bool hasWirePass;
-  final WireChargeType wireChargeType;
-  final double wireChargeValue;
 }
 
 class _EditBudgetItemResult {
@@ -1170,16 +1021,10 @@ class _EditBudgetItemResult {
     required this.valueType,
     required this.unitValue,
     required this.quantity,
-    required this.hasWirePass,
-    required this.wireChargeType,
-    required this.wireChargeValue,
   });
 
   final String name;
   final ItemValueType valueType;
   final double unitValue;
   final int quantity;
-  final bool hasWirePass;
-  final WireChargeType wireChargeType;
-  final double wireChargeValue;
 }

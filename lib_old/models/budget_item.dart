@@ -2,8 +2,6 @@ import 'dart:convert';
 
 enum ItemValueType { fixed, percentage }
 
-enum WireChargeType { fixed, percentage }
-
 class BudgetItem {
   BudgetItem({
     required this.id,
@@ -12,9 +10,6 @@ class BudgetItem {
     required this.unitValue,
     required this.quantity,
     required this.createdAt,
-    this.hasWirePass = false,
-    this.wireChargeType = WireChargeType.fixed,
-    this.wireChargeValue = 0,
   });
 
   final String id;
@@ -23,38 +18,10 @@ class BudgetItem {
   final double unitValue;
   final int quantity;
   final DateTime createdAt;
-  final bool hasWirePass;
-  final WireChargeType wireChargeType;
-  final double wireChargeValue;
-
-  double get adjustedUnitValue {
-    if (!hasWirePass || valueType != ItemValueType.fixed) {
-      return unitValue;
-    }
-
-    if (wireChargeType == WireChargeType.fixed) {
-      return unitValue + wireChargeValue;
-    }
-
-    final percentageValue = (unitValue * (wireChargeValue / 100));
-    return unitValue + percentageValue;
-  }
-
-  double get wireChargeAppliedPerUnit {
-    if (!hasWirePass || valueType != ItemValueType.fixed) {
-      return 0;
-    }
-
-    if (wireChargeType == WireChargeType.fixed) {
-      return wireChargeValue;
-    }
-
-    return unitValue * (wireChargeValue / 100);
-  }
 
   double totalForFixedBase(double fixedBase) {
     if (valueType == ItemValueType.fixed) {
-      return adjustedUnitValue * quantity;
+      return unitValue * quantity;
     }
     return fixedBase * (unitValue / 100) * quantity;
   }
@@ -66,9 +33,6 @@ class BudgetItem {
     double? unitValue,
     int? quantity,
     DateTime? createdAt,
-    bool? hasWirePass,
-    WireChargeType? wireChargeType,
-    double? wireChargeValue,
   }) {
     return BudgetItem(
       id: id ?? this.id,
@@ -77,9 +41,6 @@ class BudgetItem {
       unitValue: unitValue ?? this.unitValue,
       quantity: quantity ?? this.quantity,
       createdAt: createdAt ?? this.createdAt,
-      hasWirePass: hasWirePass ?? this.hasWirePass,
-      wireChargeType: wireChargeType ?? this.wireChargeType,
-      wireChargeValue: wireChargeValue ?? this.wireChargeValue,
     );
   }
 
@@ -91,9 +52,6 @@ class BudgetItem {
       'unitValue': unitValue,
       'quantity': quantity,
       'createdAt': createdAt.toIso8601String(),
-      'hasWirePass': hasWirePass,
-      'wireChargeType': wireChargeType.name,
-      'wireChargeValue': wireChargeValue,
     };
   }
 
@@ -108,16 +66,6 @@ class BudgetItem {
       unitValue: (map['unitValue'] as num).toDouble(),
       quantity: (map['quantity'] as num).toInt(),
       createdAt: DateTime.parse(map['createdAt'] as String),
-      hasWirePass: map['hasWirePass'] as bool? ?? false,
-      wireChargeType: () {
-        final rawType = map['wireChargeType'];
-        if (rawType == 'discount') return WireChargeType.percentage;
-        return WireChargeType.values.firstWhere(
-          (e) => e.name == rawType,
-          orElse: () => WireChargeType.fixed,
-        );
-      }(),
-      wireChargeValue: (map['wireChargeValue'] as num?)?.toDouble() ?? 0,
     );
   }
 
