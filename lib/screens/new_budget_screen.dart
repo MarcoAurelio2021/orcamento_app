@@ -318,6 +318,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final theme = Theme.of(context);
     final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return GestureDetector(
@@ -332,339 +333,407 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
             AppSectionCard(
               title: 'Cadastro de orçamento',
               subtitle:
-                  'Preencha os dados iniciais e comece um novo orçamento.',
-              child: Form(
-                key: _clientFormKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _clientController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome do cliente',
+                  'Preencha os dados iniciais para começar um novo atendimento.',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF1E2A78),
+                          Color(0xFF5F8DBB),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Informe o cliente'
-                              : null,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _technicianController,
-                      decoration: const InputDecoration(labelText: 'Técnico'),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Inicie com os dados do cliente',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Depois você adiciona os serviços e acompanha os totais em tempo real.',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Endereço'),
+                  ),
+                  const SizedBox(height: 18),
+                  Form(
+                    key: _clientFormKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _clientController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nome do cliente',
+                            prefixIcon: Icon(Icons.person_outline_rounded),
+                          ),
+                          validator: (value) =>
+                              (value == null || value.trim().isEmpty)
+                                  ? 'Informe o cliente'
+                                  : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _technicianController,
+                          decoration: const InputDecoration(
+                            labelText: 'Técnico responsável',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _addressController,
+                          decoration: const InputDecoration(
+                            labelText: 'Endereço',
+                            prefixIcon: Icon(Icons.location_on_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _paymentController,
+                          decoration: const InputDecoration(
+                            labelText: 'Forma de pagamento',
+                            prefixIcon: Icon(Icons.payments_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _notesController,
+                          minLines: 2,
+                          maxLines: 4,
+                          decoration: const InputDecoration(
+                            labelText: 'Observações',
+                            alignLabelWithHint: true,
+                            prefixIcon: Icon(Icons.sticky_note_2_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _startBudget,
+                            icon: const Icon(Icons.flash_on_rounded),
+                            label: const Text('Iniciar orçamento'),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _paymentController,
-                      decoration: const InputDecoration(
-                        labelText: 'Forma de pagamento',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _notesController,
-                      minLines: 2,
-                      maxLines: 4,
-                      decoration:
-                          const InputDecoration(labelText: 'Observações'),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _startBudget,
-                      child: const Text('Iniciar orçamento'),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             )
           else
             AppSectionCard(
               title: 'Resumo do cliente',
               subtitle:
-                  'Os dados continuam acessíveis para edição sem poluir a tela.',
+                  'Os dados principais continuam visíveis e fáceis de editar.',
               trailing: TextButton.icon(
                 onPressed: () => setState(() => _started = false),
                 icon: const Icon(Icons.edit_outlined),
                 label: const Text('Editar'),
               ),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 220,
-                    child: InfoChip(
-                      label: 'Cliente',
-                      value: _clientController.text.trim(),
-                    ),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      SizedBox(
+                        width: 220,
+                        child: InfoChip(
+                          label: 'Cliente',
+                          value: _clientController.text.trim(),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 220,
+                        child: InfoChip(
+                          label: 'Técnico',
+                          value: _technicianController.text.trim(),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 280,
+                        child: InfoChip(
+                          label: 'Endereço',
+                          value: _addressController.text.trim(),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 220,
+                        child: InfoChip(
+                          label: 'Pagamento',
+                          value: _paymentController.text.trim(),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(
-                    width: 220,
-                    child: InfoChip(
-                      label: 'Técnico',
-                      value: _technicianController.text.trim(),
+                  if (_notesController.text.trim().isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFD),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFD8E0EF)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.notes_rounded,
+                            color: Color(0xFF1E2A78),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _notesController.text.trim(),
+                              style: const TextStyle(
+                                color: Color(0xFF334155),
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    width: 280,
-                    child: InfoChip(
-                      label: 'Endereço',
-                      value: _addressController.text.trim(),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 220,
-                    child: InfoChip(
-                      label: 'Pagamento',
-                      value: _paymentController.text.trim(),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
           const SizedBox(height: 16),
           AppSectionCard(
-            title: 'Relatório do orçamento',
+            title: 'Itens e totais do orçamento',
             subtitle:
-                'Adicione itens, gerencie quantidades e acompanhe os totais em tempo real.',
+                'Adicione serviços, ajuste quantidades e acompanhe o fechamento.',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Form(
-                  key: _itemFormKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Autocomplete<_ItemSuggestion>(
-                        optionsBuilder: (textEditingValue) {
-                          return _buildSuggestions(
-                            appState,
-                            textEditingValue.text,
-                          );
-                        },
-                        displayStringForOption: (option) => option.name,
-                        onSelected: _applySuggestion,
-                        fieldViewBuilder: (
-                          context,
-                          textEditingController,
-                          focusNode,
-                          onFieldSubmitted,
-                        ) {
-                          if (_serviceController.text !=
-                              textEditingController.text) {
-                            textEditingController.text =
-                                _serviceController.text;
-                            textEditingController.selection =
-                                TextSelection.fromPosition(
-                              TextPosition(
-                                offset: textEditingController.text.length,
-                              ),
-                            );
-                          }
-
-                          return TextFormField(
-                            key: _serviceFieldKey,
-                            controller: textEditingController,
-                            focusNode: focusNode,
-                            decoration: const InputDecoration(
-                              labelText: 'Tipo de serviço',
-                            ),
-                            onChanged: (value) {
-                              _serviceController.text = value;
-                            },
-                            validator: (value) =>
-                                (value == null || value.trim().isEmpty)
-                                    ? 'Informe o serviço'
-                                    : null,
-                          );
-                        },
-                        optionsViewBuilder: (context, onSelected, options) {
-                          final list = options.toList();
-                          if (list.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
-
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 4,
-                              borderRadius: BorderRadius.circular(12),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 420,
-                                  maxHeight: 240,
-                                ),
-                                child: ListView.separated(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  shrinkWrap: true,
-                                  itemCount: list.length,
-                                  separatorBuilder: (_, __) =>
-                                      const Divider(height: 1),
-                                  itemBuilder: (context, index) {
-                                    final option = list[index];
-                                    return ListTile(
-                                      dense: true,
-                                      title: Text(option.name),
-                                      subtitle: Text(
-                                        option.valueType == ItemValueType.fixed
-                                            ? 'Valor: ${NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(option.unitValue)}'
-                                            : 'Percentual: ${option.unitValue.toStringAsFixed(2)}%',
-                                      ),
-                                      onTap: () => onSelected(option),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 320,
-                            child: SegmentedButton<ItemValueType>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: ItemValueType.fixed,
-                                  label: Text('Valor fixo'),
-                                ),
-                                ButtonSegment(
-                                  value: ItemValueType.percentage,
-                                  label: Text('Percentual (%)'),
-                                ),
-                              ],
-                              selected: {_itemValueType},
-                              onSelectionChanged: (value) => setState(() {
-                                _itemValueType = value.first;
-                                if (_itemValueType != ItemValueType.fixed) {
-                                  _hasWirePass = false;
-                                  _wireChargeType = WireChargeType.fixed;
-                                  _wireChargeController.text = '0';
-                                }
-                              }),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 220,
-                            child: TextFormField(
-                              controller: _valueController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: _itemValueType == ItemValueType.fixed
-                                    ? 'Valor unitário'
-                                    : 'Percentual (%)',
-                              ),
-                              validator: (value) {
-                                final parsed = double.tryParse(
-                                  (value ?? '').replaceAll(',', '.'),
-                                );
-                                if (parsed == null || parsed < 0) {
-                                  return 'Valor inválido';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 160,
-                            child: TextFormField(
-                              controller: _quantityController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Quantidade',
-                              ),
-                              validator: (value) {
-                                final parsed = int.tryParse(value ?? '');
-                                if (parsed == null || parsed <= 0) {
-                                  return 'Qtd inválida';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_itemValueType == ItemValueType.fixed) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: 420,
-                          child: SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(
-                                value: false,
-                                label: Text('Sem passar fio'),
-                              ),
-                              ButtonSegment(
-                                value: true,
-                                label: Text('Com passar fio'),
-                              ),
-                            ],
-                            selected: {_hasWirePass},
-                            onSelectionChanged: (value) => setState(
-                              () => _hasWirePass = value.first,
-                            ),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _SummaryStatCard(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'Itens',
+                      value: '${_items.length}',
+                    ),
+                    _SummaryStatCard(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'Subtotal',
+                      value: currency.format(_subtotal),
+                    ),
+                    _SummaryStatCard(
+                      icon: Icons.discount_outlined,
+                      title: 'Desconto',
+                      value: currency.format(_discountApplied),
+                    ),
+                    _SummaryStatCard(
+                      icon: Icons.paid_outlined,
+                      title: 'Total final',
+                      value: currency.format(_totalFinal),
+                      highlighted: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFD),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD8E0EF)),
+                  ),
+                  child: Form(
+                    key: _itemFormKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Adicionar item',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1E2A78),
                           ),
                         ),
-                      ],
-                      if (_itemValueType == ItemValueType.fixed &&
-                          _hasWirePass) ...[
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Use sugestões de serviços salvos e monte o orçamento com mais rapidez.',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Autocomplete<_ItemSuggestion>(
+                          optionsBuilder: (textEditingValue) {
+                            return _buildSuggestions(
+                              appState,
+                              textEditingValue.text,
+                            );
+                          },
+                          displayStringForOption: (option) => option.name,
+                          onSelected: _applySuggestion,
+                          fieldViewBuilder: (
+                            context,
+                            textEditingController,
+                            focusNode,
+                            onFieldSubmitted,
+                          ) {
+                            if (_serviceController.text !=
+                                textEditingController.text) {
+                              textEditingController.text =
+                                  _serviceController.text;
+                              textEditingController.selection =
+                                  TextSelection.fromPosition(
+                                TextPosition(
+                                  offset: textEditingController.text.length,
+                                ),
+                              );
+                            }
+
+                            return TextFormField(
+                              key: _serviceFieldKey,
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              decoration: const InputDecoration(
+                                labelText: 'Tipo de serviço',
+                                prefixIcon: Icon(Icons.build_circle_outlined),
+                              ),
+                              onChanged: (value) {
+                                _serviceController.text = value;
+                              },
+                              validator: (value) =>
+                                  (value == null || value.trim().isEmpty)
+                                      ? 'Informe o serviço'
+                                      : null,
+                            );
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            final list = options.toList();
+                            if (list.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 10,
+                                borderRadius: BorderRadius.circular(18),
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 460,
+                                    maxHeight: 260,
+                                  ),
+                                  child: ListView.separated(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    shrinkWrap: true,
+                                    itemCount: list.length,
+                                    separatorBuilder: (_, __) =>
+                                        const Divider(height: 1),
+                                    itemBuilder: (context, index) {
+                                      final option = list[index];
+                                      return ListTile(
+                                        dense: true,
+                                        leading: Container(
+                                          height: 38,
+                                          width: 38,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE8EEFF),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: const Icon(
+                                            Icons.flash_on_rounded,
+                                            color: Color(0xFF1E2A78),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        title: Text(option.name),
+                                        subtitle: Text(
+                                          option.valueType ==
+                                                  ItemValueType.fixed
+                                              ? 'Valor: ${NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(option.unitValue)}'
+                                              : 'Percentual: ${option.unitValue.toStringAsFixed(2)}%',
+                                        ),
+                                        onTap: () => onSelected(option),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             SizedBox(
                               width: 320,
-                              child: SegmentedButton<WireChargeType>(
+                              child: SegmentedButton<ItemValueType>(
                                 segments: const [
                                   ButtonSegment(
-                                    value: WireChargeType.fixed,
-                                    label: Text('Preço fixo'),
+                                    value: ItemValueType.fixed,
+                                    label: Text('Valor fixo'),
                                   ),
                                   ButtonSegment(
-                                    value: WireChargeType.percentage,
-                                    label: Text('Percentual'),
+                                    value: ItemValueType.percentage,
+                                    label: Text('Percentual (%)'),
                                   ),
                                 ],
-                                selected: {_wireChargeType},
-                                onSelectionChanged: (value) => setState(
-                                  () => _wireChargeType = value.first,
-                                ),
+                                selected: {_itemValueType},
+                                onSelectionChanged: (value) => setState(() {
+                                  _itemValueType = value.first;
+                                  if (_itemValueType != ItemValueType.fixed) {
+                                    _hasWirePass = false;
+                                    _wireChargeType = WireChargeType.fixed;
+                                    _wireChargeController.text = '0';
+                                  }
+                                }),
                               ),
                             ),
                             SizedBox(
                               width: 220,
                               child: TextFormField(
-                                controller: _wireChargeController,
+                                controller: _valueController,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
                                 decoration: InputDecoration(
-                                  labelText: _wireChargeType ==
-                                          WireChargeType.fixed
-                                      ? 'Valor fixo para passar fio'
-                                      : 'Percentual para passar fio (%)',
+                                  labelText:
+                                      _itemValueType == ItemValueType.fixed
+                                          ? 'Valor unitário'
+                                          : 'Percentual (%)',
+                                  prefixIcon: const Icon(Icons.sell_outlined),
                                 ),
                                 validator: (value) {
-                                  if (!_hasWirePass ||
-                                      _itemValueType != ItemValueType.fixed) {
-                                    return null;
-                                  }
-
                                   final parsed = double.tryParse(
                                     (value ?? '').replaceAll(',', '.'),
                                   );
@@ -675,59 +744,154 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                                 },
                               ),
                             ),
+                            SizedBox(
+                              width: 160,
+                              child: TextFormField(
+                                controller: _quantityController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Quantidade',
+                                  prefixIcon: Icon(Icons.numbers_rounded),
+                                ),
+                                validator: (value) {
+                                  final parsed = int.tryParse(value ?? '');
+                                  if (parsed == null || parsed <= 0) {
+                                    return 'Qtd inválida';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
                           ],
                         ),
-                      ],
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _started ? () => _addItem(appState) : null,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Adicionar item'),
-                      ),
-                      if (!_started) ...[
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Comece o orçamento antes de adicionar itens.',
-                          style: TextStyle(color: Colors.black54),
+                        if (_itemValueType == ItemValueType.fixed) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: 420,
+                            child: SegmentedButton<bool>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: false,
+                                  label: Text('Sem passar fio'),
+                                ),
+                                ButtonSegment(
+                                  value: true,
+                                  label: Text('Com passar fio'),
+                                ),
+                              ],
+                              selected: {_hasWirePass},
+                              onSelectionChanged: (value) => setState(
+                                () => _hasWirePass = value.first,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (_itemValueType == ItemValueType.fixed &&
+                            _hasWirePass) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: 320,
+                                child: SegmentedButton<WireChargeType>(
+                                  segments: const [
+                                    ButtonSegment(
+                                      value: WireChargeType.fixed,
+                                      label: Text('Preço fixo'),
+                                    ),
+                                    ButtonSegment(
+                                      value: WireChargeType.percentage,
+                                      label: Text('Percentual'),
+                                    ),
+                                  ],
+                                  selected: {_wireChargeType},
+                                  onSelectionChanged: (value) => setState(
+                                    () => _wireChargeType = value.first,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 220,
+                                child: TextFormField(
+                                  controller: _wireChargeController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        _wireChargeType == WireChargeType.fixed
+                                            ? 'Valor do passar fio'
+                                            : 'Percentual do passar fio (%)',
+                                    prefixIcon:
+                                        const Icon(Icons.electrical_services),
+                                  ),
+                                  validator: (value) {
+                                    if (!_hasWirePass ||
+                                        _itemValueType != ItemValueType.fixed) {
+                                      return null;
+                                    }
+
+                                    final parsed = double.tryParse(
+                                      (value ?? '').replaceAll(',', '.'),
+                                    );
+                                    if (parsed == null || parsed < 0) {
+                                      return 'Valor inválido';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                _started ? () => _addItem(appState) : null,
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Adicionar item'),
+                          ),
                         ),
+                        if (!_started) ...[
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Comece o orçamento antes de adicionar itens.',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Itens adicionados (${_items.length})',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                const SizedBox(height: 20),
+                Text(
+                  'Itens adicionados (${_items.length})',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1F2937),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
                   width: double.infinity,
                   constraints: const BoxConstraints(
-                    minHeight: 100,
-                    maxHeight: 320,
+                    minHeight: 120,
+                    maxHeight: 420,
                   ),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: const Color(0xFFF8FAFD),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD8E0EF)),
                   ),
                   child: _items.isEmpty
-                      ? const Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            'Nenhum item adicionado ainda.',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        )
+                      ? const _EmptyItemsState()
                       : Scrollbar(
                           thumbVisibility: true,
                           child: ListView.separated(
@@ -740,153 +904,67 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                               final total =
                                   item.totalForFixedBase(_fixedSubtotal);
 
-                              return Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.grey.shade300,
-                                    width: 1.2,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 16,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      item.valueType == ItemValueType.fixed
-                                          ? 'Tipo: Valor fixo'
-                                          : 'Tipo: Percentual',
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item.valueType == ItemValueType.fixed
-                                          ? 'Valor unitário: ${currency.format(item.unitValue)}'
-                                          : 'Percentual: ${item.unitValue.toStringAsFixed(2)}%',
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    if (item.valueType == ItemValueType.fixed) ...[
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        item.hasWirePass
-                                            ? 'Com passar fio'
-                                            : 'Sem passar fio',
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      if (item.hasWirePass) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item.wireChargeType == WireChargeType.fixed
-                                              ? 'Passar fio valor fixo: ${currency.format(item.wireChargeValue)}'
-                                              : 'Passar fio percentual: ${item.wireChargeValue.toStringAsFixed(2)}%',
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Valor unitário final: ${currency.format(item.adjustedUnitValue)}',
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Quantidade: ${item.quantity}',
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Subtotal: ${currency.format(total)}',
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Wrap(
-                                      spacing: 12,
-                                      runSpacing: 8,
-                                      children: [
-                                        OutlinedButton.icon(
-                                          onPressed: () => _editItem(item),
-                                          icon: const Icon(Icons.edit_outlined),
-                                          label: const Text('Editar'),
-                                        ),
-                                        TextButton.icon(
-                                          onPressed: () => _removeItem(item.id),
-                                          icon:
-                                              const Icon(Icons.delete_outline),
-                                          label: const Text('Excluir'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                              return _BudgetItemCard(
+                                item: item,
+                                total: total,
+                                currency: currency,
+                                onEdit: () => _editItem(item),
+                                onRemove: () => _removeItem(item.id),
                               );
                             },
                           ),
                         ),
                 ),
                 const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    SizedBox(
-                      width: 320,
-                      child: SegmentedButton<DiscountType>(
-                        segments: const [
-                          ButtonSegment(
-                            value: DiscountType.fixed,
-                            label: Text('Desconto fixo'),
-                          ),
-                          ButtonSegment(
-                            value: DiscountType.percentage,
-                            label: Text('Desconto %'),
-                          ),
-                        ],
-                        selected: {_discountType},
-                        onSelectionChanged: (value) =>
-                            setState(() => _discountType = value.first),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 220,
-                      child: TextField(
-                        controller: _discountController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFD),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD8E0EF)),
+                  ),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 320,
+                        child: SegmentedButton<DiscountType>(
+                          segments: const [
+                            ButtonSegment(
+                              value: DiscountType.fixed,
+                              label: Text('Desconto fixo'),
+                            ),
+                            ButtonSegment(
+                              value: DiscountType.percentage,
+                              label: Text('Desconto %'),
+                            ),
+                          ],
+                          selected: {_discountType},
+                          onSelectionChanged: (value) =>
+                              setState(() => _discountType = value.first),
                         ),
-                        decoration:
-                            const InputDecoration(labelText: 'Desconto'),
-                        onChanged: (_) => setState(() {}),
                       ),
-                    ),
-                  ],
+                      SizedBox(
+                        width: 220,
+                        child: TextField(
+                          controller: _discountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Desconto',
+                            prefixIcon: Icon(Icons.local_offer_outlined),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 TotalsCard(
                   subtotal: _subtotal,
                   discount: _discountApplied,
@@ -898,7 +976,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                   runSpacing: 12,
                   children: [
                     SizedBox(
-                      width: 220,
+                      width: 240,
                       child: ElevatedButton.icon(
                         onPressed:
                             _started ? () => _saveBudget(appState) : null,
@@ -907,7 +985,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
                       ),
                     ),
                     SizedBox(
-                      width: 220,
+                      width: 240,
                       child: OutlinedButton.icon(
                         onPressed: _clearAll,
                         icon: const Icon(Icons.cancel_outlined),
@@ -925,6 +1003,330 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
   }
 }
 
+class _SummaryStatCard extends StatelessWidget {
+  const _SummaryStatCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    this.highlighted = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 210,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: highlighted
+            ? const LinearGradient(
+                colors: [
+                  Color(0xFF1E2A78),
+                  Color(0xFF5F8DBB),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: highlighted ? null : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: highlighted ? null : Border.all(color: const Color(0xFFD8E0EF)),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 14,
+            offset: Offset(0, 8),
+            color: Color(0x12000000),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 46,
+            width: 46,
+            decoration: BoxDecoration(
+              color: highlighted
+                  ? Colors.white.withOpacity(0.18)
+                  : const Color(0xFFE8EEFF),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              icon,
+              color: highlighted ? Colors.white : const Color(0xFF1E2A78),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color:
+                        highlighted ? Colors.white70 : const Color(0xFF64748B),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: highlighted ? Colors.white : const Color(0xFF111827),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyItemsState extends StatelessWidget {
+  const _EmptyItemsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 64,
+              width: 64,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EEFF),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.inventory_2_outlined,
+                color: Color(0xFF1E2A78),
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Nenhum item adicionado ainda',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Adicione um serviço acima para começar a montar o orçamento.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BudgetItemCard extends StatelessWidget {
+  const _BudgetItemCard({
+    required this.item,
+    required this.total,
+    required this.currency,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final BudgetItem item;
+  final double total;
+  final NumberFormat currency;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final tags = <String>[
+      item.valueType == ItemValueType.fixed ? 'Valor fixo' : 'Percentual',
+      'Qtd: ${item.quantity}',
+      if (item.valueType == ItemValueType.fixed)
+        item.hasWirePass ? 'Com passar fio' : 'Sem passar fio',
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD8E0EF)),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 12,
+            offset: Offset(0, 8),
+            color: Color(0x0D000000),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 12,
+            spacing: 12,
+            children: [
+              SizedBox(
+                width: 420,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 44,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8EEFF),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.flash_on_rounded,
+                        color: Color(0xFF1E2A78),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  currency.format(total),
+                  style: const TextStyle(
+                    color: Color(0xFF1E2A78),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tags
+                .map(
+                  (tag) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFD),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: const Color(0xFFD8E0EF)),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 18,
+            runSpacing: 8,
+            children: [
+              Text(
+                item.valueType == ItemValueType.fixed
+                    ? 'Valor unitário: ${currency.format(item.unitValue)}'
+                    : 'Percentual: ${item.unitValue.toStringAsFixed(2)}%',
+                style: const TextStyle(
+                  color: Color(0xFF334155),
+                  height: 1.35,
+                ),
+              ),
+              if (item.valueType == ItemValueType.fixed && item.hasWirePass)
+                Text(
+                  item.wireChargeType == WireChargeType.fixed
+                      ? 'Passar fio: ${currency.format(item.wireChargeValue)}'
+                      : 'Passar fio: ${item.wireChargeValue.toStringAsFixed(2)}%',
+                  style: const TextStyle(
+                    color: Color(0xFF334155),
+                    height: 1.35,
+                  ),
+                ),
+              if (item.valueType == ItemValueType.fixed && item.hasWirePass)
+                Text(
+                  'Valor final unitário: ${currency.format(item.adjustedUnitValue)}',
+                  style: const TextStyle(
+                    color: Color(0xFF334155),
+                    height: 1.35,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Editar'),
+              ),
+              TextButton.icon(
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Excluir'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _EditBudgetItemDialog extends StatefulWidget {
   const _EditBudgetItemDialog({required this.item});
@@ -991,7 +1393,9 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
         hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
         wireChargeType: _wireChargeType,
         wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
-            ? (double.tryParse(_wireChargeController.text.replaceAll(',', '.')) ?? 0)
+            ? (double.tryParse(
+                    _wireChargeController.text.replaceAll(',', '.')) ??
+                0)
             : 0,
       ),
     );
@@ -1003,108 +1407,124 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
       child: AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
         title: const Text('Editar item'),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _serviceController,
-                decoration: const InputDecoration(labelText: 'Tipo de serviço'),
-              ),
-              const SizedBox(height: 12),
-              SegmentedButton<ItemValueType>(
-                segments: const [
-                  ButtonSegment(
-                    value: ItemValueType.fixed,
-                    label: Text('Valor fixo'),
-                  ),
-                  ButtonSegment(
-                    value: ItemValueType.percentage,
-                    label: Text('Percentual'),
-                  ),
-                ],
-                selected: {_type},
-                onSelectionChanged: (value) => setState(() {
-                  _type = value.first;
-                  if (_type != ItemValueType.fixed) {
-                    _hasWirePass = false;
-                    _wireChargeType = WireChargeType.fixed;
-                    _wireChargeController.text = '0';
-                  }
-                }),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _valueController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: _type == ItemValueType.fixed
-                      ? 'Valor unitário'
-                      : 'Percentual (%)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _quantityController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Quantidade'),
-              ),
-              if (_type == ItemValueType.fixed) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: 420,
-                  child: SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(
-                        value: false,
-                        label: Text('Sem passar fio'),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        label: Text('Com passar fio'),
-                      ),
-                    ],
-                    selected: {_hasWirePass},
-                    onSelectionChanged: (value) => setState(
-                      () => _hasWirePass = value.first,
-                    ),
+          child: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _serviceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de serviço',
+                    prefixIcon: Icon(Icons.build_circle_outlined),
                   ),
                 ),
-              ],
-              if (_type == ItemValueType.fixed && _hasWirePass) ...[
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: 320,
-                  child: SegmentedButton<WireChargeType>(
-                    segments: const [
-                      ButtonSegment(
-                        value: WireChargeType.fixed,
-                        label: Text('Preço fixo'),
-                      ),
-                      ButtonSegment(
-                        value: WireChargeType.percentage,
-                        label: Text('Percentual'),
-                      ),
-                    ],
-                    selected: {_wireChargeType},
-                    onSelectionChanged: (value) => setState(
-                      () => _wireChargeType = value.first,
+                SegmentedButton<ItemValueType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ItemValueType.fixed,
+                      label: Text('Valor fixo'),
                     ),
+                    ButtonSegment(
+                      value: ItemValueType.percentage,
+                      label: Text('Percentual'),
+                    ),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (value) => setState(() {
+                    _type = value.first;
+                    if (_type != ItemValueType.fixed) {
+                      _hasWirePass = false;
+                      _wireChargeType = WireChargeType.fixed;
+                      _wireChargeController.text = '0';
+                    }
+                  }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _valueController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: _type == ItemValueType.fixed
+                        ? 'Valor unitário'
+                        : 'Percentual (%)',
+                    prefixIcon: const Icon(Icons.sell_outlined),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: _wireChargeController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: _wireChargeType == WireChargeType.fixed
-                        ? 'Valor fixo para passar fio'
-                        : 'Percentual para passar fio (%)',
+                  controller: _quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantidade',
+                    prefixIcon: Icon(Icons.numbers_rounded),
                   ),
                 ),
+                if (_type == ItemValueType.fixed) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 420,
+                    child: SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment(
+                          value: false,
+                          label: Text('Sem passar fio'),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          label: Text('Com passar fio'),
+                        ),
+                      ],
+                      selected: {_hasWirePass},
+                      onSelectionChanged: (value) => setState(
+                        () => _hasWirePass = value.first,
+                      ),
+                    ),
+                  ),
+                ],
+                if (_type == ItemValueType.fixed && _hasWirePass) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 320,
+                    child: SegmentedButton<WireChargeType>(
+                      segments: const [
+                        ButtonSegment(
+                          value: WireChargeType.fixed,
+                          label: Text('Preço fixo'),
+                        ),
+                        ButtonSegment(
+                          value: WireChargeType.percentage,
+                          label: Text('Percentual'),
+                        ),
+                      ],
+                      selected: {_wireChargeType},
+                      onSelectionChanged: (value) => setState(
+                        () => _wireChargeType = value.first,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _wireChargeController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: _wireChargeType == WireChargeType.fixed
+                          ? 'Valor do passar fio'
+                          : 'Percentual do passar fio (%)',
+                      prefixIcon: const Icon(Icons.electrical_services),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         actions: [

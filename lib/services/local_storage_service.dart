@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/budget.dart';
@@ -20,7 +18,10 @@ class LocalStorageService {
 
   Future<void> saveBudgets(List<Budget> budgets) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_budgetsKey, budgets.map((e) => e.toJson()).toList());
+    await prefs.setStringList(
+      _budgetsKey,
+      budgets.map((e) => e.toJson()).toList(),
+    );
   }
 
   Future<List<ServiceType>> loadServices() async {
@@ -31,7 +32,10 @@ class LocalStorageService {
 
   Future<void> saveServices(List<ServiceType> services) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_servicesKey, services.map((e) => e.toJson()).toList());
+    await prefs.setStringList(
+      _servicesKey,
+      services.map((e) => e.toJson()).toList(),
+    );
   }
 
   Future<CompanyData> loadCompany() async {
@@ -43,7 +47,7 @@ class LocalStorageService {
 
   Future<void> saveCompany(CompanyData company) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_companyKey, jsonEncode(company.toMap()));
+    await prefs.setString(_companyKey, company.toJson());
   }
 
   Future<int> nextBudgetNumber() async {

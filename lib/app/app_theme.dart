@@ -1,87 +1,67 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color background = Color(0xFFEEF2FF);
-  static const Color card = Colors.white;
-  static const Color primary = Color(0xFFF59E0B);
-  static const Color secondary = Color(0xFF3B82F6);
-  static const Color text = Color(0xFF1F2937);
-  static const Color success = Color(0xFF16A34A);
-  static const Color danger = Color(0xFFDC2626);
-
-  static ThemeData get lightTheme {
-    final base = ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        primary: primary,
-        secondary: secondary,
-        surface: card,
+  static ThemeData lightTheme = ThemeData(
+    useMaterial3: true,
+    colorScheme: const ColorScheme(
+      brightness: Brightness.light,
+      primary: Color(0xFF1E2A78),
+      onPrimary: Colors.white,
+      secondary: Color(0xFF5F8DBB),
+      onSecondary: Colors.white,
+      surface: Colors.white,
+      onSurface: Color(0xFF111827),
+      error: Colors.red,
+      onError: Colors.white,
+    ),
+    scaffoldBackgroundColor: const Color(0xFFF5F7FB),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF1E2A78),
+      foregroundColor: Colors.white,
+      elevation: 2,
+      centerTitle: true,
+    ),
+    cardTheme: CardThemeData(
+      elevation: 4,
+      shadowColor: Colors.black12,
+      color: Colors.white,
+      margin: const EdgeInsets.all(0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-      useMaterial3: true,
-      scaffoldBackgroundColor: background,
-    );
-
-    return base.copyWith(
-      textTheme: base.textTheme.apply(
-        bodyColor: text,
-        displayColor: text,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: secondary, width: 1.5),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: card,
-        elevation: 0,
-        margin: EdgeInsets.zero,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF1E2A78),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: text,
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: Color(0xFF1E2A78),
+          width: 1.4,
         ),
       ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          side: const BorderSide(color: secondary),
-          foregroundColor: secondary,
-        ),
-      ),
-      chipTheme: base.chipTheme.copyWith(
-        backgroundColor: Colors.white,
-        selectedColor: secondary.withValues(alpha: 0.12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

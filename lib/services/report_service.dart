@@ -88,6 +88,15 @@ class ReportService {
       NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
   static final _date = DateFormat('dd/MM/yyyy HH:mm');
 
+  static const PdfColor _brandPrimary = PdfColor.fromInt(0xFF1E2A78);
+  static const PdfColor _brandSecondary = PdfColor.fromInt(0xFF5F8DBB);
+  static const PdfColor _softBlue = PdfColor.fromInt(0xFFEAF1FF);
+  static const PdfColor _pageBackground = PdfColor.fromInt(0xFFF8FAFD);
+  static const PdfColor _textDark = PdfColor.fromInt(0xFF1F2937);
+  static const PdfColor _textMuted = PdfColor.fromInt(0xFF6B7280);
+  static const PdfColor _lineColor = PdfColor.fromInt(0xFFD7DEEA);
+  static const PdfColor _successTint = PdfColor.fromInt(0xFFE8F1FF);
+
   static String filtersLabel(ReportPdfOptions options) {
     final labels = options.selectedLabels();
     if (labels.isEmpty) {
@@ -121,7 +130,9 @@ class ReportService {
     if (budget.technician.isNotEmpty) {
       buffer.writeln('Técnico: ${budget.technician}');
     }
-    if (budget.address.isNotEmpty) buffer.writeln('Endereço: ${budget.address}');
+    if (budget.address.isNotEmpty) {
+      buffer.writeln('Endereço: ${budget.address}');
+    }
     if (budget.paymentMethod.isNotEmpty) {
       buffer.writeln('Pagamento: ${budget.paymentMethod}');
     }
@@ -163,6 +174,7 @@ class ReportService {
     ReportPdfOptions options = const ReportPdfOptions(),
   }) async {
     final pdf = pw.Document();
+
     final itemHeaders = _headersForOptions(options);
     final itemRows = budget.items
         .map((item) => _rowForItem(item, budget.fixedSubtotal, options))
@@ -172,115 +184,417 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(28, 28, 28, 32),
         build: (context) => [
-          if (includeCompany && company != null && company.hasAnyData)
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  company.name,
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                if (company.cnpj.isNotEmpty) pw.Text('CNPJ: ${company.cnpj}'),
-                if (company.phone.isNotEmpty) pw.Text('Telefone: ${company.phone}'),
-                if (company.email.isNotEmpty) pw.Text('E-mail: ${company.email}'),
-                if (company.address.isNotEmpty) pw.Text('Endereço: ${company.address}'),
-                pw.SizedBox(height: 16),
-              ],
-            ),
-          pw.Text(
-            'ORÇAMENTO',
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18),
-          ),
-          pw.SizedBox(height: 10),
-          pw.Container(
-            width: double.infinity,
-            padding: pw.EdgeInsets.all(10),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.grey100,
-              borderRadius: pw.BorderRadius.circular(8),
-              border: pw.Border.all(color: PdfColors.grey300),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'Dados do cliente',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-                pw.SizedBox(height: 6),
-                pw.Text('Cliente: ${budget.clientName}'),
-                if (budget.technician.isNotEmpty)
-                  pw.Text('Técnico: ${budget.technician}'),
-                if (budget.address.isNotEmpty)
-                  pw.Text('Endereço: ${budget.address}'),
-                if (budget.paymentMethod.isNotEmpty)
-                  pw.Text('Pagamento: ${budget.paymentMethod}'),
-                pw.Text('Data: ${_date.format(budget.createdAt)}'),
-              ],
-            ),
-          ),
+          _buildHeader(budget, company, includeCompany),
+          pw.SizedBox(height: 18),
+          _buildClientSection(budget),
           if (itemHeaders.isNotEmpty && itemRows.isNotEmpty) ...[
-            pw.SizedBox(height: 16),
-            pw.TableHelper.fromTextArray(
-              headers: itemHeaders,
-              data: itemRows,
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-              cellPadding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.6),
-            ),
+            pw.SizedBox(height: 18),
+            _buildItemsSection(itemHeaders, itemRows),
           ],
-          if (options.showSubtotal || options.showDiscount || options.showTotalFinal) ...[
-            pw.SizedBox(height: 16),
-            pw.Align(
-              alignment: pw.Alignment.centerRight,
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  if (options.showSubtotal)
-                    pw.Text('Subtotal: ${_currency.format(budget.subtotal)}'),
-                  if (options.showDiscount)
-                    pw.Text('Desconto: ${_currency.format(budget.discountApplied)}'),
-                  if (options.showTotalFinal)
-                    pw.Container(
-                      margin: pw.EdgeInsets.only(top: 6),
-                      padding: pw.EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.grey300,
-                        borderRadius: pw.BorderRadius.circular(6),
-                      ),
-                      child: pw.Text(
-                        'Total final: ${_currency.format(budget.totalFinal)}',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          if (options.showSubtotal ||
+              options.showDiscount ||
+              options.showTotalFinal) ...[
+            pw.SizedBox(height: 18),
+            _buildTotalsSection(budget, options),
           ],
           if (options.showNotes && budget.notes.trim().isNotEmpty) ...[
-            pw.SizedBox(height: 16),
-            pw.Text(
-              'Observações',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-            ),
-            pw.Text(budget.notes),
+            pw.SizedBox(height: 18),
+            _buildNotesSection(budget.notes),
           ],
         ],
+        footer: (context) => pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 12),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Speed Orçamento',
+                style: const pw.TextStyle(
+                  color: _textMuted,
+                  fontSize: 9,
+                ),
+              ),
+              pw.Text(
+                'Página ${context.pageNumber} de ${context.pagesCount}',
+                style: const pw.TextStyle(
+                  color: _textMuted,
+                  fontSize: 9,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
 
     return pdf.save();
+  }
+
+  static pw.Widget _buildHeader(
+    Budget budget,
+    CompanyData? company,
+    bool includeCompany,
+  ) {
+    return pw.Container(
+      width: double.infinity,
+      decoration: pw.BoxDecoration(
+        gradient: const pw.LinearGradient(
+          colors: [_brandPrimary, _brandSecondary],
+          begin: pw.Alignment.topLeft,
+          end: pw.Alignment.bottomRight,
+        ),
+        borderRadius: pw.BorderRadius.circular(18),
+      ),
+      padding: const pw.EdgeInsets.all(20),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 46,
+            height: 46,
+            decoration: pw.BoxDecoration(
+              color: PdfColors.white,
+              borderRadius: pw.BorderRadius.circular(12),
+            ),
+            alignment: pw.Alignment.center,
+            child: pw.Text(
+              '⚡',
+              style: const pw.TextStyle(fontSize: 22),
+            ),
+          ),
+          pw.SizedBox(width: 14),
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'ORÇAMENTO',
+                  style: pw.TextStyle(
+                    color: PdfColors.white,
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 20,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Documento gerado em ${_date.format(budget.createdAt)}',
+                  style: const pw.TextStyle(
+                    color: PdfColors.white,
+                    fontSize: 10.5,
+                  ),
+                ),
+                if (includeCompany &&
+                    company != null &&
+                    company.hasAnyData) ...[
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    company.name,
+                    style: pw.TextStyle(
+                      color: PdfColors.white,
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Wrap(
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: [
+                      if (company.cnpj.isNotEmpty)
+                        _headerInfoChip('CNPJ: ${company.cnpj}'),
+                      if (company.phone.isNotEmpty)
+                        _headerInfoChip('Telefone: ${company.phone}'),
+                      if (company.email.isNotEmpty)
+                        _headerInfoChip('E-mail: ${company.email}'),
+                    ],
+                  ),
+                  if (company.address.isNotEmpty) ...[
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      company.address,
+                      style: const pw.TextStyle(
+                        color: PdfColors.white,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _headerInfoChip(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: pw.BorderRadius.circular(20),
+        border: pw.Border.all(
+          color: PdfColor.fromInt(0xFFD7DEEA),
+          width: 0.6,
+        ),
+      ),
+      child: pw.Text(
+        text,
+        style: const pw.TextStyle(
+          color: _brandPrimary,
+          fontSize: 9.5,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildClientSection(Budget budget) {
+    return _sectionCard(
+      title: 'Dados do cliente',
+      child: pw.Column(
+        children: [
+          _infoRow('Cliente', budget.clientName),
+          if (budget.technician.isNotEmpty)
+            _infoRow('Técnico', budget.technician),
+          if (budget.address.isNotEmpty) _infoRow('Endereço', budget.address),
+          if (budget.paymentMethod.isNotEmpty)
+            _infoRow('Pagamento', budget.paymentMethod),
+          _infoRow('Data', _date.format(budget.createdAt), isLast: true),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildItemsSection(
+    List<String> headers,
+    List<List<String>> rows,
+  ) {
+    return _sectionCard(
+      title: 'Itens do orçamento',
+      child: pw.TableHelper.fromTextArray(
+        headers: headers,
+        data: rows,
+        headerStyle: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          color: PdfColors.white,
+          fontSize: 10,
+        ),
+        headerDecoration: const pw.BoxDecoration(
+          color: _brandPrimary,
+        ),
+        cellStyle: const pw.TextStyle(
+          color: _textDark,
+          fontSize: 9.5,
+        ),
+        oddRowDecoration: const pw.BoxDecoration(
+          color: _pageBackground,
+        ),
+        rowDecoration: const pw.BoxDecoration(
+          color: PdfColors.white,
+        ),
+        cellPadding: const pw.EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 8,
+        ),
+        border: pw.TableBorder(
+          horizontalInside: pw.BorderSide(color: _lineColor, width: 0.5),
+          verticalInside: pw.BorderSide(color: _lineColor, width: 0.5),
+          top: pw.BorderSide(color: _lineColor, width: 0.8),
+          bottom: pw.BorderSide(color: _lineColor, width: 0.8),
+          left: pw.BorderSide(color: _lineColor, width: 0.8),
+          right: pw.BorderSide(color: _lineColor, width: 0.8),
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildTotalsSection(
+    Budget budget,
+    ReportPdfOptions options,
+  ) {
+    return pw.Align(
+      alignment: pw.Alignment.centerRight,
+      child: pw.Container(
+        width: 220,
+        padding: const pw.EdgeInsets.all(14),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.white,
+          borderRadius: pw.BorderRadius.circular(16),
+          border: pw.Border.all(color: _lineColor),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Text(
+              'Resumo financeiro',
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 11.5,
+                color: _textDark,
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            if (options.showSubtotal)
+              _totalLine('Subtotal', _currency.format(budget.subtotal)),
+            if (options.showDiscount)
+              _totalLine('Desconto', _currency.format(budget.discountApplied)),
+            if (options.showTotalFinal) ...[
+              pw.SizedBox(height: 8),
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: _successTint,
+                  borderRadius: pw.BorderRadius.circular(12),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Total final',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        color: _brandPrimary,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                    pw.Text(
+                      _currency.format(budget.totalFinal),
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        color: _brandPrimary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildNotesSection(String notes) {
+    return _sectionCard(
+      title: 'Observações',
+      child: pw.Text(
+        notes,
+        style: const pw.TextStyle(
+          fontSize: 10,
+          color: _textDark,
+          lineSpacing: 2,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _sectionCard({
+    required String title,
+    required pw.Widget child,
+  }) {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(14),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: pw.BorderRadius.circular(16),
+        border: pw.Border.all(color: _lineColor),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 12.5,
+              color: _brandPrimary,
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _infoRow(
+    String label,
+    String value, {
+    bool isLast = false,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(vertical: 7),
+      decoration: pw.BoxDecoration(
+        border: isLast
+            ? null
+            : const pw.Border(
+                bottom: pw.BorderSide(
+                  color: _lineColor,
+                  width: 0.5,
+                ),
+              ),
+      ),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 72,
+            child: pw.Text(
+              label,
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                color: _textMuted,
+                fontSize: 10,
+              ),
+            ),
+          ),
+          pw.SizedBox(width: 10),
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: const pw.TextStyle(
+                color: _textDark,
+                fontSize: 10.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _totalLine(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            label,
+            style: const pw.TextStyle(
+              color: _textMuted,
+              fontSize: 10.5,
+            ),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              color: _textDark,
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   static List<String> _headersForOptions(ReportPdfOptions options) {

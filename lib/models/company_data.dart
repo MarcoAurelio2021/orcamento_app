@@ -16,11 +16,21 @@ class CompanyData {
   final String address;
 
   factory CompanyData.empty() {
-    return CompanyData(name: '', cnpj: '', phone: '', email: '', address: '');
+    return CompanyData(
+      name: '',
+      cnpj: '',
+      phone: '',
+      email: '',
+      address: '',
+    );
   }
 
   bool get hasAnyData =>
-      name.isNotEmpty || cnpj.isNotEmpty || phone.isNotEmpty || email.isNotEmpty || address.isNotEmpty;
+      name.isNotEmpty ||
+      cnpj.isNotEmpty ||
+      phone.isNotEmpty ||
+      email.isNotEmpty ||
+      address.isNotEmpty;
 
   CompanyData copyWith({
     String? name,
@@ -60,6 +70,9 @@ class CompanyData {
 
   String toJson() => jsonEncode(toMap());
 
-  factory CompanyData.fromJson(String source) =>
-      CompanyData.fromMap(jsonDecode(source) as Map<String, dynamic>);
+  factory CompanyData.fromJson(String source) {
+    return CompanyData.fromMap(
+      jsonDecode(source) as Map<String, dynamic>,
+    );
+  }
 }

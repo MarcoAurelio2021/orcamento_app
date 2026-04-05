@@ -24,8 +24,8 @@ class OrcamentosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Speed Orçamento',
       debugShowCheckedModeBanner: false,
-      title: 'Orçamentos',
       theme: AppTheme.lightTheme,
       home: const HomeShell(),
     );
