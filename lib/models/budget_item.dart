@@ -12,6 +12,7 @@ class BudgetItem {
     required this.unitValue,
     required this.quantity,
     required this.createdAt,
+    this.observation = '',
     this.hasWirePass = false,
     this.wireChargeType = WireChargeType.fixed,
     this.wireChargeValue = 0,
@@ -23,6 +24,7 @@ class BudgetItem {
   final double unitValue;
   final int quantity;
   final DateTime createdAt;
+  final String observation;
   final bool hasWirePass;
   final WireChargeType wireChargeType;
   final double wireChargeValue;
@@ -66,6 +68,7 @@ class BudgetItem {
     double? unitValue,
     int? quantity,
     DateTime? createdAt,
+    String? observation,
     bool? hasWirePass,
     WireChargeType? wireChargeType,
     double? wireChargeValue,
@@ -77,6 +80,7 @@ class BudgetItem {
       unitValue: unitValue ?? this.unitValue,
       quantity: quantity ?? this.quantity,
       createdAt: createdAt ?? this.createdAt,
+      observation: observation ?? this.observation,
       hasWirePass: hasWirePass ?? this.hasWirePass,
       wireChargeType: wireChargeType ?? this.wireChargeType,
       wireChargeValue: wireChargeValue ?? this.wireChargeValue,
@@ -91,6 +95,7 @@ class BudgetItem {
       'unitValue': unitValue,
       'quantity': quantity,
       'createdAt': createdAt.toIso8601String(),
+      'observation': observation,
       'hasWirePass': hasWirePass,
       'wireChargeType': wireChargeType.name,
       'wireChargeValue': wireChargeValue,
@@ -108,6 +113,7 @@ class BudgetItem {
       unitValue: (map['unitValue'] as num).toDouble(),
       quantity: (map['quantity'] as num).toInt(),
       createdAt: DateTime.parse(map['createdAt'] as String),
+      observation: map['observation'] as String? ?? '',
       hasWirePass: map['hasWirePass'] as bool? ?? false,
       wireChargeType: () {
         final rawType = map['wireChargeType'];

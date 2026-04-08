@@ -25,6 +25,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
   final _serviceController = TextEditingController();
   final _valueController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
+  final _itemObservationController = TextEditingController();
   final _discountController = TextEditingController(text: '0');
   final _wireChargeController = TextEditingController(text: '0');
 
@@ -49,6 +50,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
     _serviceController.dispose();
     _valueController.dispose();
     _quantityController.dispose();
+    _itemObservationController.dispose();
     _discountController.dispose();
     _wireChargeController.dispose();
     super.dispose();
@@ -156,6 +158,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
     required String name,
     required ItemValueType valueType,
     required double unitValue,
+    required String observation,
     required bool hasWirePass,
     required WireChargeType wireChargeType,
     required double wireChargeValue,
@@ -163,6 +166,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
     return existing.name.trim().toLowerCase() == name.trim().toLowerCase() &&
         existing.valueType == valueType &&
         existing.unitValue == unitValue &&
+        existing.observation.trim() == observation.trim() &&
         existing.hasWirePass == hasWirePass &&
         existing.wireChargeType == wireChargeType &&
         existing.wireChargeValue == wireChargeValue;
@@ -191,6 +195,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
         name: name,
         valueType: _itemValueType,
         unitValue: value,
+        observation: _itemObservationController.text.trim(),
         hasWirePass: _hasWirePass,
         wireChargeType: _wireChargeType,
         wireChargeValue: _wireChargeValue,
@@ -209,6 +214,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
           valueType: _itemValueType,
           unitValue: value,
           quantity: quantity,
+          observation: _itemObservationController.text.trim(),
           hasWirePass: _itemValueType == ItemValueType.fixed && _hasWirePass,
           wireChargeType: _wireChargeType,
           wireChargeValue: _itemValueType == ItemValueType.fixed && _hasWirePass
@@ -221,6 +227,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen> {
       _serviceController.clear();
       _valueController.clear();
       _quantityController.text = '1';
+      _itemObservationController.clear();
       _wireChargeController.text = '0';
       _itemValueType = ItemValueType.fixed;
       _hasWirePass = false;
@@ -1305,6 +1312,16 @@ class _BudgetItemCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (item.observation.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Observação: ${item.observation}',
+              style: const TextStyle(
+                color: Color(0xFF334155),
+                height: 1.35,
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           Wrap(
             spacing: 12,
@@ -1341,6 +1358,7 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
   late final TextEditingController _serviceController;
   late final TextEditingController _valueController;
   late final TextEditingController _quantityController;
+  late final TextEditingController _observationController;
   late final TextEditingController _wireChargeController;
   late ItemValueType _type;
   late bool _hasWirePass;
@@ -1356,6 +1374,9 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
     _quantityController = TextEditingController(
       text: widget.item.quantity.toString(),
     );
+    _observationController = TextEditingController(
+      text: widget.item.observation,
+    );
     _wireChargeController = TextEditingController(
       text: widget.item.wireChargeValue.toStringAsFixed(2),
     );
@@ -1369,6 +1390,7 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
     _serviceController.dispose();
     _valueController.dispose();
     _quantityController.dispose();
+    _observationController.dispose();
     _wireChargeController.dispose();
     super.dispose();
   }
@@ -1390,6 +1412,7 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
         valueType: _type,
         unitValue: value,
         quantity: quantity,
+        observation: _observationController.text.trim(),
         hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
         wireChargeType: _wireChargeType,
         wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
@@ -1465,6 +1488,17 @@ class _EditBudgetItemDialogState extends State<_EditBudgetItemDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Quantidade',
                     prefixIcon: Icon(Icons.numbers_rounded),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _observationController,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Observação',
+                    alignLabelWithHint: true,
+                    prefixIcon: Icon(Icons.notes_outlined),
                   ),
                 ),
                 if (_type == ItemValueType.fixed) ...[

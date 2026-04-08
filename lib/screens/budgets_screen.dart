@@ -206,16 +206,24 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
   Future<void> _openBudgetDetails(BuildContext context, Budget budget) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => BudgetDetailsScreen(initialBudget: budget),
+        builder: (_) => BudgetDetailsScreen(
+          budgetId: budget.id,
+          fallbackBudget: budget,
+        ),
       ),
     );
   }
 }
 
 class BudgetDetailsScreen extends StatefulWidget {
-  const BudgetDetailsScreen({super.key, required this.initialBudget});
+  const BudgetDetailsScreen({
+    super.key,
+    required this.budgetId,
+    required this.fallbackBudget,
+  });
 
-  final Budget initialBudget;
+  final String budgetId;
+  final Budget fallbackBudget;
 
   @override
   State<BudgetDetailsScreen> createState() => _BudgetDetailsScreenState();
@@ -233,10 +241,24 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
   late List<BudgetItem> _items;
   bool _isEditing = false;
 
+
+  Budget _getSourceBudget() {
+    final appState = context.read<AppState>();
+    final budgetIndex = appState.budgets.indexWhere(
+      (element) => element.id == widget.budgetId,
+    );
+
+    if (budgetIndex >= 0) {
+      return appState.budgets[budgetIndex];
+    }
+
+    return widget.fallbackBudget;
+  }
+
   @override
   void initState() {
     super.initState();
-    final budget = widget.initialBudget;
+    final budget = _getSourceBudget();
     _clientController = TextEditingController(text: budget.clientName);
     _technicianController = TextEditingController(text: budget.technician);
     _addressController = TextEditingController(text: budget.address);
@@ -264,7 +286,9 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
       double.tryParse(_discountController.text.replaceAll(',', '.')) ?? 0;
 
   Budget _currentBudget() {
-    return widget.initialBudget.copyWith(
+    final sourceBudget = _getSourceBudget();
+
+    return sourceBudget.copyWith(
       clientName: _clientController.text.trim(),
       technician: _technicianController.text.trim(),
       address: _addressController.text.trim(),
@@ -272,7 +296,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
       notes: _notesController.text.trim(),
       discountType: _discountType,
       discountValue: _discountValue,
-      items: _items,
+      items: _items.map((item) => item.copyWith()).toList(),
     );
   }
 
@@ -281,6 +305,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     required String name,
     required ItemValueType valueType,
     required double unitValue,
+    required String observation,
     required bool hasWirePass,
     required WireChargeType wireChargeType,
     required double wireChargeValue,
@@ -288,6 +313,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     return existing.name.trim().toLowerCase() == name.trim().toLowerCase() &&
         existing.valueType == valueType &&
         existing.unitValue == unitValue &&
+        existing.observation.trim() == observation.trim() &&
         existing.hasWirePass == hasWirePass &&
         existing.wireChargeType == wireChargeType &&
         existing.wireChargeValue == wireChargeValue;
@@ -310,6 +336,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
           valueType: result.valueType,
           unitValue: result.unitValue,
           quantity: result.quantity,
+          observation: result.observation,
           hasWirePass: result.hasWirePass,
           wireChargeType: result.wireChargeType,
           wireChargeValue: result.wireChargeValue,
@@ -337,6 +364,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
           name: result.name,
           valueType: result.valueType,
           unitValue: result.unitValue,
+          observation: result.observation,
           hasWirePass: result.hasWirePass,
           wireChargeType: result.wireChargeType,
           wireChargeValue: result.wireChargeValue,
@@ -356,6 +384,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
             valueType: result.valueType,
             unitValue: result.unitValue,
             quantity: result.quantity,
+            observation: result.observation,
             hasWirePass: result.hasWirePass,
             wireChargeType: result.wireChargeType,
             wireChargeValue: result.wireChargeValue,
@@ -472,7 +501,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Criado em ${date.format(widget.initialBudget.createdAt)}',
+                      'Criado em ${date.format(budget.createdAt)}',
                     ),
                   ),
                 ],
@@ -612,12 +641,20 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
                     onPressed: _isEditing
                         ? () async {
                             final messenger = ScaffoldMessenger.of(context);
+                            final updatedBudget = _currentBudget();
 
-                            await context.read<AppState>().updateBudget(budget);
+                            await context
+                                .read<AppState>()
+                                .updateBudget(updatedBudget);
 
                             if (!mounted) return;
 
-                            setState(() => _isEditing = false);
+                            setState(() {
+                              _isEditing = false;
+                              _items = updatedBudget.items
+                                  .map((item) => item.copyWith())
+                                  .toList();
+                            });
 
                             messenger.showSnackBar(
                               const SnackBar(
@@ -645,7 +682,7 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
                     onPressed: () async {
                       await context
                           .read<AppState>()
-                          .deleteBudget(widget.initialBudget.id);
+                          .deleteBudget(widget.budgetId);
 
                       if (!mounted) return;
 
@@ -681,6 +718,8 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _quantityController =
       TextEditingController(text: '1');
+  final TextEditingController _observationController =
+      TextEditingController();
   final TextEditingController _wireChargeController =
       TextEditingController(text: '0');
 
@@ -724,6 +763,7 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
         valueType: _type,
         unitValue: value,
         quantity: quantity,
+        observation: _observationController.text.trim(),
         hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
         wireChargeType: _wireChargeType,
         wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
@@ -738,6 +778,7 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
     _serviceController.dispose();
     _valueController.dispose();
     _quantityController.dispose();
+    _observationController.dispose();
     _wireChargeController.dispose();
     super.dispose();
   }
@@ -880,6 +921,16 @@ class _AddBudgetItemDialogState extends State<AddBudgetItemDialog> {
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Quantidade'),
                   ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _observationController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Observação',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
                   if (_type == ItemValueType.fixed) ...[
                     const SizedBox(height: 12),
                     SegmentedButton<bool>(
@@ -973,6 +1024,7 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _valueController;
   late final TextEditingController _quantityController;
+  late final TextEditingController _observationController;
   late final TextEditingController _wireChargeController;
   late ItemValueType _type;
   late bool _hasWirePass;
@@ -988,6 +1040,9 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
     _quantityController = TextEditingController(
       text: widget.item.quantity.toString(),
     );
+    _observationController = TextEditingController(
+      text: widget.item.observation,
+    );
     _wireChargeController = TextEditingController(
       text: widget.item.wireChargeValue.toStringAsFixed(2),
     );
@@ -1001,6 +1056,7 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
     _nameController.dispose();
     _valueController.dispose();
     _quantityController.dispose();
+    _observationController.dispose();
     _wireChargeController.dispose();
     super.dispose();
   }
@@ -1020,6 +1076,7 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
         valueType: _type,
         unitValue: value,
         quantity: quantity,
+        observation: _observationController.text.trim(),
         hasWirePass: _type == ItemValueType.fixed ? _hasWirePass : false,
         wireChargeType: _wireChargeType,
         wireChargeValue: _type == ItemValueType.fixed && _hasWirePass
@@ -1084,6 +1141,16 @@ class _EditBudgetItemDialogState extends State<EditBudgetItemDialog> {
                 controller: _quantityController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Quantidade'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _observationController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Observação',
+                  alignLabelWithHint: true,
+                ),
               ),
               if (_type == ItemValueType.fixed) ...[
                 const SizedBox(height: 12),
@@ -1161,6 +1228,7 @@ class _AddBudgetItemResult {
     required this.valueType,
     required this.unitValue,
     required this.quantity,
+    required this.observation,
     required this.hasWirePass,
     required this.wireChargeType,
     required this.wireChargeValue,
@@ -1170,6 +1238,7 @@ class _AddBudgetItemResult {
   final ItemValueType valueType;
   final double unitValue;
   final int quantity;
+  final String observation;
   final bool hasWirePass;
   final WireChargeType wireChargeType;
   final double wireChargeValue;
@@ -1181,6 +1250,7 @@ class _EditBudgetItemResult {
     required this.valueType,
     required this.unitValue,
     required this.quantity,
+    required this.observation,
     required this.hasWirePass,
     required this.wireChargeType,
     required this.wireChargeValue,
@@ -1190,6 +1260,7 @@ class _EditBudgetItemResult {
   final ItemValueType valueType;
   final double unitValue;
   final int quantity;
+  final String observation;
   final bool hasWirePass;
   final WireChargeType wireChargeType;
   final double wireChargeValue;

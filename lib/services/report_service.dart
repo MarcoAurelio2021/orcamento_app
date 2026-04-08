@@ -13,6 +13,7 @@ class ReportPdfOptions {
     this.showItemValue = false,
     this.showWirePass = false,
     this.showQuantity = true,
+    this.showItemObservation = false,
     this.showItemsTotal = false,
     this.showSubtotal = true,
     this.showDiscount = true,
@@ -25,6 +26,7 @@ class ReportPdfOptions {
   final bool showItemValue;
   final bool showWirePass;
   final bool showQuantity;
+  final bool showItemObservation;
   final bool showItemsTotal;
   final bool showSubtotal;
   final bool showDiscount;
@@ -37,6 +39,7 @@ class ReportPdfOptions {
     bool? showItemValue,
     bool? showWirePass,
     bool? showQuantity,
+    bool? showItemObservation,
     bool? showItemsTotal,
     bool? showSubtotal,
     bool? showDiscount,
@@ -49,6 +52,7 @@ class ReportPdfOptions {
       showItemValue: showItemValue ?? this.showItemValue,
       showWirePass: showWirePass ?? this.showWirePass,
       showQuantity: showQuantity ?? this.showQuantity,
+      showItemObservation: showItemObservation ?? this.showItemObservation,
       showItemsTotal: showItemsTotal ?? this.showItemsTotal,
       showSubtotal: showSubtotal ?? this.showSubtotal,
       showDiscount: showDiscount ?? this.showDiscount,
@@ -63,6 +67,7 @@ class ReportPdfOptions {
       showItemValue ||
       showWirePass ||
       showQuantity ||
+      showItemObservation ||
       showItemsTotal;
 
   List<String> selectedLabels() {
@@ -73,6 +78,7 @@ class ReportPdfOptions {
     if (showItemValue) labels.add('Valor do item');
     if (showWirePass) labels.add('Passar fio');
     if (showQuantity) labels.add('Qtd');
+    if (showItemObservation) labels.add('Observação do item');
     if (showItemsTotal) labels.add('Total dos itens');
     if (showSubtotal) labels.add('Subtotal');
     if (showDiscount) labels.add('Desconto');
@@ -187,20 +193,20 @@ class ReportService {
         margin: const pw.EdgeInsets.fromLTRB(28, 28, 28, 32),
         build: (context) => [
           _buildHeader(budget, company, includeCompany),
-          pw.SizedBox(height: 18),
+          pw.SizedBox(height: 10),
           _buildClientSection(budget),
           if (itemHeaders.isNotEmpty && itemRows.isNotEmpty) ...[
-            pw.SizedBox(height: 18),
+            pw.SizedBox(height: 10),
             _buildItemsSection(itemHeaders, itemRows),
           ],
           if (options.showSubtotal ||
               options.showDiscount ||
               options.showTotalFinal) ...[
-            pw.SizedBox(height: 18),
+            pw.SizedBox(height: 10),
             _buildTotalsSection(budget, options),
           ],
           if (options.showNotes && budget.notes.trim().isNotEmpty) ...[
-            pw.SizedBox(height: 18),
+            pw.SizedBox(height: 10),
             _buildNotesSection(budget.notes),
           ],
         ],
@@ -372,42 +378,46 @@ class ReportService {
     List<String> headers,
     List<List<String>> rows,
   ) {
-    return _sectionCard(
-      title: 'Itens do orçamento',
-      child: pw.TableHelper.fromTextArray(
-        headers: headers,
-        data: rows,
-        headerStyle: pw.TextStyle(
-          fontWeight: pw.FontWeight.bold,
-          color: PdfColors.white,
-          fontSize: 10,
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _sectionHeader('Itens do orçamento'),
+        pw.SizedBox(height: 6),
+        pw.TableHelper.fromTextArray(
+          headers: headers,
+          data: rows,
+          headerStyle: pw.TextStyle(
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.white,
+            fontSize: 10,
+          ),
+          headerDecoration: const pw.BoxDecoration(
+            color: _brandPrimary,
+          ),
+          cellStyle: const pw.TextStyle(
+            color: _textDark,
+            fontSize: 9.5,
+          ),
+          oddRowDecoration: const pw.BoxDecoration(
+            color: _pageBackground,
+          ),
+          rowDecoration: const pw.BoxDecoration(
+            color: PdfColors.white,
+          ),
+          cellPadding: const pw.EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ),
+          border: pw.TableBorder(
+            horizontalInside: pw.BorderSide(color: _lineColor, width: 0.5),
+            verticalInside: pw.BorderSide(color: _lineColor, width: 0.5),
+            top: pw.BorderSide(color: _lineColor, width: 0.8),
+            bottom: pw.BorderSide(color: _lineColor, width: 0.8),
+            left: pw.BorderSide(color: _lineColor, width: 0.8),
+            right: pw.BorderSide(color: _lineColor, width: 0.8),
+          ),
         ),
-        headerDecoration: const pw.BoxDecoration(
-          color: _brandPrimary,
-        ),
-        cellStyle: const pw.TextStyle(
-          color: _textDark,
-          fontSize: 9.5,
-        ),
-        oddRowDecoration: const pw.BoxDecoration(
-          color: _pageBackground,
-        ),
-        rowDecoration: const pw.BoxDecoration(
-          color: PdfColors.white,
-        ),
-        cellPadding: const pw.EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 8,
-        ),
-        border: pw.TableBorder(
-          horizontalInside: pw.BorderSide(color: _lineColor, width: 0.5),
-          verticalInside: pw.BorderSide(color: _lineColor, width: 0.5),
-          top: pw.BorderSide(color: _lineColor, width: 0.8),
-          bottom: pw.BorderSide(color: _lineColor, width: 0.8),
-          left: pw.BorderSide(color: _lineColor, width: 0.8),
-          right: pw.BorderSide(color: _lineColor, width: 0.8),
-        ),
-      ),
+      ],
     );
   }
 
@@ -482,14 +492,47 @@ class ReportService {
   }
 
   static pw.Widget _buildNotesSection(String notes) {
-    return _sectionCard(
-      title: 'Observações',
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _sectionHeader('Observações'),
+        pw.SizedBox(height: 6),
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(14),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.white,
+            borderRadius: pw.BorderRadius.circular(16),
+            border: pw.Border.all(color: _lineColor),
+          ),
+          child: pw.Text(
+            notes,
+            style: const pw.TextStyle(
+              fontSize: 10,
+              color: _textDark,
+              lineSpacing: 2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _sectionHeader(String title) {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: pw.BorderRadius.circular(16),
+        border: pw.Border.all(color: _lineColor),
+      ),
       child: pw.Text(
-        notes,
-        style: const pw.TextStyle(
-          fontSize: 10,
-          color: _textDark,
-          lineSpacing: 2,
+        title,
+        style: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 12.5,
+          color: _brandPrimary,
         ),
       ),
     );
@@ -604,6 +647,7 @@ class ReportService {
     if (options.showItemValue) headers.add('Valor do item');
     if (options.showWirePass) headers.add('Passar fio');
     if (options.showQuantity) headers.add('Qtd');
+    if (options.showItemObservation) headers.add('Observação');
     if (options.showItemsTotal) headers.add('Total dos itens');
     return headers;
   }
@@ -631,6 +675,7 @@ class ReportService {
       row.add(_wirePassLabel(item));
     }
     if (options.showQuantity) row.add('${item.quantity}');
+    if (options.showItemObservation) row.add(item.observation.trim());
     if (options.showItemsTotal) row.add(_currency.format(total));
 
     return row;
